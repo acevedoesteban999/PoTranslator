@@ -1,9 +1,8 @@
-# POT/PO Translator - Herramienta de Traducción para .POT y .PO
-
-![Interfaz Gráfica del Traductor](![imagen](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
-)
+# PoTranslator - Herramienta de Traducción para .POT y .PO
 
 Herramienta para convertir archivos .pot a archivos .po traducidos automáticamente usando Google Translate, con interfaz gráfica o por línea de comandos.
+
+![Interfaz Gráfica del Traductor](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
 
 ## Cómo Usarlo
 
