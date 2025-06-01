@@ -19,6 +19,7 @@ class PoTranslatorGUI:
         self.log_messages = []
         self.batch_size = tk.IntVar(value=250)  # Valor por defecto
         self.is_translating = False
+        self.output_in_source_dir = tk.BooleanVar(value=True)
         
         # Crear widgets
         self.create_widgets()
@@ -42,6 +43,12 @@ class PoTranslatorGUI:
         
         ttk.Label(config_frame, text="Tamaño del lote:").grid(row=0, column=0, sticky=tk.W)
         ttk.Spinbox(config_frame, from_=1, to=500, textvariable=self.batch_size, width=10).grid(row=0, column=1, sticky=tk.W, padx=5)
+        
+        ttk.Checkbutton(
+            config_frame, 
+            text="Guardar archivos en el directorio del archivo POT",
+            variable=self.output_in_source_dir
+        ).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=5)
         
         # Sección de idiomas
         lang_frame = ttk.LabelFrame(main_frame, text="Idiomas de Destino", padding="10")
@@ -135,7 +142,8 @@ class PoTranslatorGUI:
             translator = PoTranslator(
                 input_pot_file=pot_file, 
                 batch_size=batch_size, 
-                delay=1
+                delay=1,
+                output_in_source_dir=self.output_in_source_dir.get(),
             )
             
             # Necesitamos correr la corutina asyncio en su propio loop

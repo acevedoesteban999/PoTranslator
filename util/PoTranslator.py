@@ -8,7 +8,7 @@ from datetime import datetime
 import shutil
 
 class PoTranslator:
-    def __init__(self, input_pot_file:str , batch_size: int = 20, delay: float = 1.0 ):
+    def __init__(self, input_pot_file:str , batch_size: int = 20, delay: float = 1.0 , output_in_source_dir = False):
         """
         Inicializa el traductor con configuración de lotes y retardo
         
@@ -24,6 +24,7 @@ class PoTranslator:
             'en': 'nplurals=2; plural=(n != 1);',
             'pt': 'nplurals=2; plural=(n != 1);'
         }
+        self.output_in_source_dir = output_in_source_dir
         self.input_pot_file = input_pot_file
         self.batch_size = batch_size
         self.delay = delay
@@ -103,7 +104,7 @@ class PoTranslator:
         restored_texts = []
         for text, placeholders in zip(translated_texts, all_placeholders):
             for i, ph in enumerate(placeholders):
-                text = text.replace(f'__PL_{i}__', ph)
+                text = text.replace(f'__PL_{i}__', ph).replace(f'__pl_{i}__', ph)
             restored_texts.append(text)
         return restored_texts
 
@@ -161,12 +162,12 @@ class PoTranslator:
         
         # Guardar archivo para este idioma
         pot_name = Path(self.input_pot_file).stem  # Obtiene el nombre sin extensión
-        output_dir = Path(f"translations/{pot_name}")
-        
-        # # Limpiar directorio si existe
-        if not output_dir.exists():
-            output_dir.mkdir(parents=True)  
-        
+        if self.output_in_source_dir:
+            output_dir = Path(self.input_pot_file).parent
+        else:
+            output_dir = Path(f"translations/{pot_name}")
+            if not output_dir.exists():
+                output_dir.mkdir(parents=True)  
         
         output_file = output_dir / f"{dest_lang}.po"
         
