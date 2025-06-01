@@ -88,10 +88,11 @@ class PoTranslator:
         all_placeholders = []
         
         for text in texts:
-            placeholders = self.placeholder_regex.findall(text)
+            placeholders_list = self.placeholder_regex.findall(text)
+            placeholders = set(placeholders_list)
             temp_text = text
             for i, ph in enumerate(placeholders):
-                temp_text = temp_text.replace(ph, f'__PL_{i}__')
+                temp_text = temp_text.replace(ph, f'__{i}__')
             prepared_texts.append(temp_text)
             all_placeholders.append(placeholders)
             
@@ -104,7 +105,7 @@ class PoTranslator:
         restored_texts = []
         for text, placeholders in zip(translated_texts, all_placeholders):
             for i, ph in enumerate(placeholders):
-                text = text.replace(f'__PL_{i}__', ph).replace(f'__pl_{i}__', ph)
+                text = text.replace(f'__{i}__', ph)
             restored_texts.append(text)
         return restored_texts
 
