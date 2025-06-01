@@ -9,16 +9,16 @@ class PoTranslatorConsole:
             '1': ('es', 'Español'),
             '2': ('en', 'Inglés'),
             '3': ('pt', 'Portugués'),
-            '4': ('fr', 'Francés'),
-            '5': ('it', 'Italiano'),
-            '6': ('de', 'Alemán')
+            # '4': ('fr', 'Francés'),
+            # '5': ('it', 'Italiano'),
+            # '6': ('de', 'Alemán')
         }
 
     def display_menu(self):
         print("\nSelecciona los idiomas a traducir (separados por comas):")
         for key, value in self.language_options.items():
             print(f"{key}. {value[1]} ({value[0]})")
-        print("0. Salir")
+        print("0. Traducir")
     
     def get_user_selection(self):
         selected = []
