@@ -56,11 +56,11 @@ class PoTranslatorGUI:
         
         languages = [
             ("Español (es)", "es"),
-            ("Inglés (en)", "en"),
             ("Portugués (pt)", "pt"),
-            # ("Francés (fr)", "fr"),
-            # ("Italiano (it)", "it"),
-            # ("Alemán (de)", "de")
+            ("Francés (fr)", "fr"),
+            ("Italiano (it)", "it"),
+            ("Alemán (de)", "de"),
+            ("Inglés (en)", "en"),
         ]
         
         for i, (text, code) in enumerate(languages):

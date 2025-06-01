@@ -7,11 +7,11 @@ class PoTranslatorConsole:
     def __init__(self):
         self.language_options = {
             '1': ('es', 'Español'),
-            '2': ('en', 'Inglés'),
-            '3': ('pt', 'Portugués'),
-            # '4': ('fr', 'Francés'),
-            # '5': ('it', 'Italiano'),
-            # '6': ('de', 'Alemán')
+            '2': ('pt', 'Portugués'),
+            '3': ('fr', 'Francés'),
+            '4': ('it', 'Italiano'),
+            '5': ('de', 'Alemán'),
+            '6': ('en', 'Inglés'),
         }
 
     def display_menu(self):
