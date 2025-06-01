@@ -10,4 +10,4 @@ Herramienta para convertir archivos .pot a archivos .po traducidos automáticame
 2. Dele acceso a internet al servicio de Python del entorno virtual
 3. Ejecute el fichero `PoTranslatorGUI.py` para la interfaz visual o `PoTranslatorConsole.py` para la consola
 4. Seleccione la dirección del archivo .pot, los idiomas e inicie a traducir
-5. Al finalizar, se creará una carpeta en la raíz del directorio
+5. Al finalizar, se crearán las traducciones junto al archivo .pot en caso de tener seleccionada la opción `Guardar archivos en el directorio del archivo POT` , de lo contrario se creará una carpeta en la raíz del directorio dentro de `translations` con el nombre del .pot como carpeta donde se ubicarán las traducciones
