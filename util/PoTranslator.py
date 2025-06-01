@@ -31,10 +31,9 @@ class PoTranslator:
         self.placeholder_regex = re.compile(
             r'({[^}]+}|%[sdf]|%\(\w+\)[sdf]|%\d+\$[sdf]|\[[^\]]+\])')
     
-        self.pofile = polib.pofile(input_pot_file)
-        self.entries = [entry for entry in self.pofile if entry.msgid and not entry.msgstr]
-        self.source_texts = [entry.msgid for entry in self.entries]
-        self.pot_metadata = self._extract_pot_metadata(self.pofile)
+        pot_pofile = polib.pofile(input_pot_file)
+        self.source_texts = [entry.msgid for entry in pot_pofile if entry.msgid and not entry.msgstr]
+        self.pot_metadata = self._extract_pot_metadata(pot_pofile)
     
     def _extract_pot_metadata(self, pot_file: polib.POFile) -> dict:
         """Extrae metadatos relevantes del archivo .pot original"""
@@ -140,9 +139,7 @@ class PoTranslator:
         # Procesar cada idioma de destino
         # Crear copia del archivo PO para este idioma
         lang_pofile = polib.pofile(self.input_pot_file)
-        po_metadata = self._generate_po_metadata(self.pot_metadata, dest_lang)
-        lang_pofile.metadata = po_metadata
-        lang_entries = self.entries
+        lang_pofile.metadata = self._generate_po_metadata(self.pot_metadata, dest_lang)
         
         # Procesar por lotes
         for i in range(0, len(self.source_texts), self.batch_size):
@@ -155,8 +152,8 @@ class PoTranslator:
             # Actualizar entradas
             for j, translated_text in enumerate(translated_batch):
                 entry_index = i + j
-                if entry_index < len(lang_entries):
-                    lang_entries[entry_index].msgstr = translated_text
+                if entry_index < len(lang_pofile):
+                    lang_pofile[entry_index].msgstr = translated_text
             
             # Pequeña pausa entre lotes
             if i + self.batch_size < len(self.source_texts):
