@@ -8,7 +8,7 @@ from datetime import datetime
 import shutil
 
 class PoTranslator:
-    def __init__(self, input_pot_file:str , batch_size: int = 20, delay: float = 1.0 , output_in_source_dir = False):
+    def __init__(self, input_pot_file:str , batch_size: int = 20, delay: float = 1.0 , output_in_source_dir = False,use_output_in_source_dir = False,log_funct = None):
         """
         Inicializa el traductor con configuración de lotes y retardo
         
@@ -25,8 +25,10 @@ class PoTranslator:
             'pt': 'nplurals=2; plural=(n != 1);'
         }
         self.output_in_source_dir = output_in_source_dir
+        self.use_output_in_source_dir = use_output_in_source_dir
         self.input_pot_file = input_pot_file
         self.batch_size = batch_size
+        self.log_funct = log_funct or print
         self.delay = delay
         self.translator = Translator()
         self.placeholder_regex = re.compile(
@@ -35,6 +37,14 @@ class PoTranslator:
         pot_pofile = polib.pofile(input_pot_file)
         self.source_texts = [entry.msgid for entry in pot_pofile if entry.msgid and not entry.msgstr]
         self.pot_metadata = self._extract_pot_metadata(pot_pofile)
+        
+        pot_name = Path(self.input_pot_file).stem  # Obtiene el nombre sin extensión
+        if self.output_in_source_dir:
+            self.output_dir = Path(self.input_pot_file).parent
+        else:
+            self.output_dir = Path(f"translations/{pot_name}")
+            if not self.output_dir.exists():
+                self.output_dir.mkdir(parents=True)  
     
     def _extract_pot_metadata(self, pot_file: polib.POFile) -> dict:
         """Extrae metadatos relevantes del archivo .pot original"""
@@ -111,21 +121,39 @@ class PoTranslator:
 
     async def _translate_batch(self, texts: List[str], dest_lang: str) -> List[str]:
         """
-        Traduce un lote de textos
+        Traduce un lote de textos, verificando si ya existen traducciones en el archivo .po de salida.
         """
-        
         # Preparar textos (manejo de placeholders)
         prepared_texts, all_placeholders = self._prepare_texts(texts)
+
+        # Verificar si ya existe un archivo .po para el idioma en la salida
+        texts_to_translate = prepared_texts
+        if self.use_output_in_source_dir:
+            existing_translations = {}
+            output_file = self.output_dir / f"{dest_lang}.po"
+            if output_file.exists():
+                existing_pofile = polib.pofile(output_file)
+                for entry in existing_pofile:
+                    if entry.msgid and entry.msgstr:
+                        existing_translations[entry.msgid] = entry.msgstr
+                self.log_funct(f"{len(existing_translations)} traducciones existentes")
+            texts_to_translate = [text for text in prepared_texts if text not in existing_translations]
+            
         
-        # Traducir
-        translations = await self.translator.translate(prepared_texts, dest=dest_lang)
-        
-        # Extraer textos traducidos
-        translated_texts = [t.text for t in translations]
-        
+        translations = await self.translator.translate(texts_to_translate, dest=dest_lang)
+        self.log_funct(f"{len(translations)} traducciones online")
+            
+        # Combinar traducciones existentes con nuevas traducciones
+        translated_texts = []
+        for text in prepared_texts:
+            if text in existing_translations:
+                translated_texts.append(existing_translations[text])
+            else:
+                translated_texts.append(translations.pop(0).text)
+
         # Restaurar placeholders
         restored_texts = self._restore_placeholders(translated_texts, all_placeholders)
-        
+
         return restored_texts
         
 
@@ -162,14 +190,8 @@ class PoTranslator:
                 await asyncio.sleep(self.delay)
         
         # Guardar archivo para este idioma
-        pot_name = Path(self.input_pot_file).stem  # Obtiene el nombre sin extensión
-        if self.output_in_source_dir:
-            output_dir = Path(self.input_pot_file).parent
-        else:
-            output_dir = Path(f"translations/{pot_name}")
-            if not output_dir.exists():
-                output_dir.mkdir(parents=True)  
         
-        output_file = output_dir / f"{dest_lang}.po"
+        
+        output_file = self.output_dir / f"{dest_lang}.po"
         
         lang_pofile.save(output_file)

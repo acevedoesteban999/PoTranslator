@@ -20,6 +20,7 @@ class PoTranslatorGUI:
         self.batch_size = tk.IntVar(value=250)  # Valor por defecto
         self.is_translating = False
         self.output_in_source_dir = tk.BooleanVar(value=True)
+        self.use_output_in_source_dir = tk.BooleanVar(value=True)
         
         # Crear widgets
         self.create_widgets()
@@ -49,6 +50,12 @@ class PoTranslatorGUI:
             text="Guardar archivos en el directorio del archivo POT",
             variable=self.output_in_source_dir
         ).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=5)
+        
+        ttk.Checkbutton(
+            config_frame, 
+            text="Usar .PO Data del directorio del archivo POT",
+            variable=self.use_output_in_source_dir
+        ).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
         
         # Sección de idiomas
         lang_frame = ttk.LabelFrame(main_frame, text="Idiomas de Destino", padding="10")
@@ -144,6 +151,8 @@ class PoTranslatorGUI:
                 batch_size=batch_size, 
                 delay=1,
                 output_in_source_dir=self.output_in_source_dir.get(),
+                use_output_in_source_dir=self.use_output_in_source_dir.get(),
+                log_funct = self.log,
             )
             
             # Necesitamos correr la corutina asyncio en su propio loop
@@ -151,7 +160,7 @@ class PoTranslatorGUI:
             asyncio.set_event_loop(loop)
             
             for lang in languages:
-                self.log(f"\nTraduciendo a {lang}...")
+                self.log(f"\nTraduciendo a '{lang}'...")
                 
                 # Crear y configurar la corutina
                 coro = translator.translate_po_file(dest_lang=lang)
@@ -159,14 +168,14 @@ class PoTranslatorGUI:
                 # Ejecutar la corutina
                 loop.run_until_complete(coro)
                 
-                self.log(f"Traducción a {lang} completada")
+                self.log(f"Traducción a '{lang}' completada")
             
             self.log("\n¡Traducción completada con éxito!")
             
             # Mostrar ubicación de los archivos generados
             pot_name = Path(pot_file).stem
             output_dir = Path(f"translations/{pot_name}")
-            self.log(f"\nArchivos guardados en: {output_dir.resolve()}")
+            self.log(f"Archivos guardados en: {output_dir.resolve()}")
             for lang in languages:
                 self.log(f"- {lang}.po")
             
