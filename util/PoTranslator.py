@@ -146,12 +146,14 @@ class PoTranslator:
         # Combinar traducciones existentes con nuevas traducciones
         translated_texts = []
         for text in prepared_texts:
-            if text in existing_translations:
-                translated_texts.append(existing_translations[text])
-            else:
-                translated_texts.append(translations.pop(0).text)
-
-        # Restaurar placeholders
+            try:
+                if text in existing_translations:
+                    translated_texts.append(existing_translations[text])
+                else:
+                    if translations:
+                        translated_texts.append(translations.pop(0).text)
+            except:
+                pass
         restored_texts = self._restore_placeholders(translated_texts, all_placeholders)
 
         return restored_texts
