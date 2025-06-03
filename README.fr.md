@@ -1,4 +1,4 @@
-# Potranslateur - outil de traduction pour .pot et .po
+# Peut
 
 ## Traduction de réadme
 
@@ -7,14 +7,16 @@
 -   [portugais](README.pt.md)
 -   [Français](README.fr.md)
 
-Outil de conversion de fichiers .pot.
+Outil pour convertir les fichiers .pot en fichiers .po traduits automatiquement à l'aide de Google Translate, avec une interface graphique ou une ligne de commande.
 
-![Interfaz Gráfica del Traductor](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
+![Translator Graphical Interface](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
 
-## Comment l'utiliser
+## Outil de traduction pour .pot et .po
+
+## Comment utiliser
 
 1.  Installez et activez l'environnement virtuel avec les bibliothèques spécifiées dans exigences.txt
-2.  Supprimer l'accès Internet au service Python de l'environnement virtuel
-3.  Exécuter le fichier`PoTranslatorGUI.py`Pour l'interface visuelle ou`PoTranslatorConsole.py`Pour la console
-4.  Sélectionnez l'adresse de fichier .pot, les langues et commencez à traduire
-5.  Al finalizar, se crearán las traducciones junto al archivo .pot en caso de tener seleccionada la opción `Guardar archivos en el directorio del archivo POT`sinon un dossier sera créé à la racine de la carte`translations`Avec le nom de .pot en tant que dossier où les traductions seront situées
+2.  Fournir un accès Internet au service Python dans l'environnement virtuel
+3.  Exécuter le fichier`PoTranslatorGUI.py`pour l'interface graphique ou`PoTranslatorConsole.py`pour la console
+4.  Select the .pot file path, the languages, and start translating
+5.  Upon completion, translations will be created next to the .pot file if the option `Save files in the POT file directory`est sélectionné; Sinon, un dossier sera créé dans le répertoire racine à l'intérieur`translations`avec le nom du fichier .pot comme dossier où les traductions seront situées
