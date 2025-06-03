@@ -1,6 +1,6 @@
 # Pode
 
-## Readme Tradução
+## README Translation
 
 -   [Inglês](README.md)
 -   [Espanhol](README.es.md)
@@ -11,12 +11,12 @@ Ferramenta para converter arquivos .pot em arquivos .po traduzidos automaticamen
 
 ![Translator Graphical Interface](https://github.com/user-attachments/assets/48377205-6435-4919-b549-091cec595f8f)
 
-## Translation Tool for .POT and .PO
+## Ferramenta de tradução para .pot e .po
 
 ## Como usar
 
 1.  Instale e ative o ambiente virtual com as bibliotecas especificadas em requisitos.txt
 2.  Forneça acesso à Internet ao serviço Python no ambiente virtual
 3.  Execute o arquivo`PoTranslatorGUI.py` for the graphical interface or `PoTranslatorConsole.py`para o console
-4.  Select the .pot file path, the languages, and start translating
+4.  Selecione o caminho do arquivo .pot, os idiomas e comece a traduzir
 5.  Após a conclusão, as traduções serão criadas ao lado do arquivo .pot se a opção`Save files in the POT file directory`é selecionado; Caso contrário, uma pasta será criada no diretório raiz dentro`translations`com o nome do arquivo .pot como a pasta onde as traduções serão localizadas
