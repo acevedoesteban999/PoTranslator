@@ -1,0 +1,34 @@
+name: Translate README
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} 
+          persist-credentials: true 
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      # ISO Langusge Codes: https://cloud.google.com/translate/docs/languages  
+      - name: Adding README - Spanish
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: es
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Adding README - Portuguese
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: pt
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Adding README - French
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: fr
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
