@@ -1,4 +1,4 @@
-# PoTranslator - Herramienta de Traducción para .POT y .PO
+# PoTranslator 
 
 ## README Translation
 - [English](README.md)
@@ -6,14 +6,15 @@
 - [Portuguese](README.pt.md)
 - [French](README.fr.md)
 
-Herramienta para convertir archivos .pot a archivos .po traducidos automáticamente usando Google Translate, con interfaz gráfica o por línea de comandos.
+Tool to convert .pot files into automatically translated .po files using Google Translate, with a graphical interface or command line.
 
-![Interfaz Gráfica del Traductor](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
+![Translator Graphical Interface](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
 
-## Cómo Usarlo
+## Translation Tool for .POT and .PO
+## How to Use
 
-1. Instale y active el entorno virtual con las librerías especificadas en requirements.txt
-2. Dele acceso a internet al servicio de Python del entorno virtual
-3. Ejecute el fichero `PoTranslatorGUI.py` para la interfaz visual o `PoTranslatorConsole.py` para la consola
-4. Seleccione la dirección del archivo .pot, los idiomas e inicie a traducir
-5. Al finalizar, se crearán las traducciones junto al archivo .pot en caso de tener seleccionada la opción `Guardar archivos en el directorio del archivo POT` , de lo contrario se creará una carpeta en la raíz del directorio dentro de `translations` con el nombre del .pot como carpeta donde se ubicarán las traducciones
+1. Install and activate the virtual environment with the libraries specified in requirements.txt
+2. Provide internet access to the Python service in the virtual environment
+3. Run the file `PoTranslatorGUI.py` for the graphical interface or `PoTranslatorConsole.py` for the console
+4. Select the .pot file path, the languages, and start translating
+5. Upon completion, translations will be created next to the .pot file if the option `Save files in the POT file directory` is selected; otherwise, a folder will be created in the root directory within `translations` with the name of the .pot file as the folder where the translations will be located
