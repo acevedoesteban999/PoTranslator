@@ -9,7 +9,7 @@
 
 Herramienta para convertir archivos .pot en archivos .po traducidos automáticamente usando Google Translate, con una interfaz gráfica o línea de comandos.
 
-![Translator Graphical Interface](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
+![Translator Graphical Interface](https://github.com/user-attachments/assets/48377205-6435-4919-b549-091cec595f8f)
 
 ## Herramienta de traducción para .pot y .po
 
