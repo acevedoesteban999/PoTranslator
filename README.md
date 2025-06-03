@@ -8,7 +8,7 @@
 
 Tool to convert .pot files into automatically translated .po files using Google Translate, with a graphical interface or command line.
 
-![Translator Graphical Interface](https://github.com/user-attachments/assets/9e127200-25d4-4367-9768-b2eef11d10e2)
+![Translator Graphical Interface](https://github.com/user-attachments/assets/48377205-6435-4919-b549-091cec595f8f)
 
 ## Translation Tool for .POT and .PO
 ## How to Use
