@@ -17,57 +17,64 @@ class PoTranslatorGUI:
         self.pot_file = tk.StringVar()
         self.selected_languages = {}
         self.log_messages = []
-        self.batch_size = tk.IntVar(value=250)  # Valor por defecto
+        self.batch_size = tk.IntVar(value=250)  # Default value
         self.is_translating = False
         self.output_in_source_dir = tk.BooleanVar(value=True)
         self.use_output_in_source_dir = tk.BooleanVar(value=True)
         
-        # Crear widgets
+        # Create widgets
         self.create_widgets()
         
     def create_widgets(self):
-        # Frame principal
+        # Main frame
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Sección de archivo POT
-        file_frame = ttk.LabelFrame(main_frame, text="Archivo POT", padding="10")
+        # POT file section
+        file_frame = ttk.LabelFrame(main_frame, text="POT File", padding="10")
         file_frame.pack(fill=tk.X, pady=5)
         
-        ttk.Label(file_frame, text="Archivo .pot:").grid(row=0, column=0, sticky=tk.W)
-        ttk.Entry(file_frame, textvariable=self.pot_file, width=50).grid(row=0, column=1, padx=5)
-        ttk.Button(file_frame, text="Examinar", command=self.browse_pot_file).grid(row=0, column=2)
+        ttk.Label(file_frame, text=".Pot file:").grid(row=0, column=0, sticky=tk.W)
         
-        # Sección de configuración
-        config_frame = ttk.LabelFrame(main_frame, text="Configuración", padding="10")
+        # Entry with expandable width
+        pot_entry = ttk.Entry(file_frame, textvariable=self.pot_file)
+        pot_entry.grid(row=0, column=1, padx=5, sticky=tk.EW)
+        
+        # Configure grid to make entry expandable
+        file_frame.columnconfigure(1, weight=1)
+        
+        ttk.Button(file_frame, text="Browse", command=self.browse_pot_file).grid(row=0, column=2)
+        
+        # Configuration section
+        config_frame = ttk.LabelFrame(main_frame, text="Settings", padding="10")
         config_frame.pack(fill=tk.X, pady=5)
         
-        ttk.Label(config_frame, text="Tamaño del lote:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(config_frame, text="Batch size:").grid(row=0, column=0, sticky=tk.W)
         ttk.Spinbox(config_frame, from_=1, to=500, textvariable=self.batch_size, width=10).grid(row=0, column=1, sticky=tk.W, padx=5)
         
         ttk.Checkbutton(
             config_frame, 
-            text="Guardar archivos en el directorio del archivo POT",
+            text="Save files in the POT file directory",
             variable=self.output_in_source_dir
         ).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=5)
         
         ttk.Checkbutton(
             config_frame, 
-            text="Usar .PO Data del directorio del archivo POT",
+            text="Use .PO Data from POT file directory",
             variable=self.use_output_in_source_dir
         ).grid(row=2, column=0, columnspan=2, sticky=tk.W, pady=5)
         
-        # Sección de idiomas
-        lang_frame = ttk.LabelFrame(main_frame, text="Idiomas de Destino", padding="10")
+        # Languages section
+        lang_frame = ttk.LabelFrame(main_frame, text="Target Languages", padding="10")
         lang_frame.pack(fill=tk.X, pady=5)
         
         languages = [
-            ("Español (es)", "es"),
-            ("Portugués (pt)", "pt"),
-            ("Francés (fr)", "fr"),
-            ("Italiano (it)", "it"),
-            ("Alemán (de)", "de"),
-            ("Inglés (en)", "en"),
+            ("Spanish (es)", "es"),
+            ("Portuguese (pt)", "pt"),
+            ("French (fr)", "fr"),
+            ("Italian (it)", "it"),
+            ("German (de)", "de"),
+            ("English (en)", "en"),
         ]
         
         for i, (text, code) in enumerate(languages):
@@ -76,17 +83,17 @@ class PoTranslatorGUI:
             cb.grid(row=i//3, column=i%3, sticky=tk.W, padx=5, pady=2)
             self.selected_languages[code] = var
         
-        # Sección de ejecución
+        # Execution section
         exec_frame = ttk.Frame(main_frame, padding="10")
         exec_frame.pack(fill=tk.X, pady=5)
         
-        self.translate_btn = ttk.Button(exec_frame, text="Traducir", command=self.start_translation)
+        self.translate_btn = ttk.Button(exec_frame, text="Translate", command=self.start_translation)
         self.translate_btn.pack(side=tk.LEFT, padx=5)
         
-        ttk.Button(exec_frame, text="Limpiar Logs", command=self.clear_logs).pack(side=tk.LEFT, padx=5)
+        ttk.Button(exec_frame, text="Clear Logs", command=self.clear_logs).pack(side=tk.LEFT, padx=5)
         
-        # Área de logs
-        log_frame = ttk.LabelFrame(main_frame, text="Logs de Ejecución", padding="10")
+        # Log area
+        log_frame = ttk.LabelFrame(main_frame, text="Execution Logs", padding="10")
         log_frame.pack(fill=tk.BOTH, expand=True)
         
         self.log_area = scrolledtext.ScrolledText(log_frame, height=15, wrap=tk.WORD)
@@ -97,22 +104,22 @@ class PoTranslatorGUI:
             return
             
         file_path = filedialog.askopenfilename(
-            title="Seleccionar archivo POT",
+            title="Select POT file",
             filetypes=[("POT files", "*.pot"), ("All files", "*.*")]
         )
         if file_path:
             self.pot_file.set(file_path)
-            self.log(f"Archivo POT seleccionado: {file_path}")
+            self.log(f"Selected POT file: {file_path}")
     
     def get_selected_languages(self):
         return [code for code, var in self.selected_languages.items() if var.get()]
     
     def toggle_ui_state(self, enabled):
-        """Habilita/deshabilita los controles de la UI durante la traducción"""
+        """Enable/disable UI controls during translation"""
         self.is_translating = not enabled
         self.translate_btn.config(state=tk.NORMAL if enabled else tk.DISABLED)
         
-        # Deshabilitar todos los checkboxes de idiomas
+        # Disable all language checkboxes
         for widget in self.root.winfo_children():
             if isinstance(widget, ttk.Checkbutton):
                 widget.config(state=tk.NORMAL if enabled else tk.DISABLED)
@@ -122,22 +129,22 @@ class PoTranslatorGUI:
             return
             
         if not self.pot_file.get():
-            messagebox.showerror("Error", "Debe seleccionar un archivo POT")
+            messagebox.showerror("Error", "You must select a POT file")
             return
             
         selected = self.get_selected_languages()
         if not selected:
-            messagebox.showerror("Error", "Debe seleccionar al menos un idioma")
+            messagebox.showerror("Error", "You must select at least one language")
             return
             
-        self.log("\nIniciando proceso de traducción...")
-        self.log(f"Archivo: {self.pot_file.get()}")
-        self.log(f"Idiomas: {', '.join(selected)}")
-        self.log(f"Tamaño de lote: {self.batch_size.get()}")
+        self.log("\nStarting translation process...")
+        self.log(f"File: {self.pot_file.get()}")
+        self.log(f"Languages: {', '.join(selected)}")
+        self.log(f"Batch size: {self.batch_size.get()}")
         
         self.toggle_ui_state(False)
         
-        # Ejecutar en un hilo separado para no bloquear la interfaz
+        # Run in a separate thread to avoid blocking the UI
         threading.Thread(
             target=self.run_translation,
             args=(self.pot_file.get(), selected, self.batch_size.get()),
@@ -152,35 +159,35 @@ class PoTranslatorGUI:
                 delay=1,
                 output_in_source_dir=self.output_in_source_dir.get(),
                 use_output_in_source_dir=self.use_output_in_source_dir.get(),
-                log_funct = self.log,
+                log_funct=self.log,
             )
             
-            # Necesitamos correr la corutina asyncio en su propio loop
+            # We need to run the asyncio coroutine in its own loop
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
             for lang in languages:
-                self.log(f"\nTraduciendo a '{lang}'...")
+                self.log(f"\nTranslating to '{lang}'...")
                 
-                # Crear y configurar la corutina
+                # Create and configure the coroutine
                 coro = translator.translate_po_file(dest_lang=lang)
                 
-                # Ejecutar la corutina
+                # Run the coroutine
                 loop.run_until_complete(coro)
                 
-                self.log(f"Traducción a '{lang}' completada")
+                self.log(f"Translation to '{lang}' completed")
             
-            self.log("\n¡Traducción completada con éxito!")
+            self.log("\nTranslation completed successfully!")
             
-            # Mostrar ubicación de los archivos generados
+            # Show location of generated files
             pot_name = Path(pot_file).stem
             output_dir = Path(f"translations/{pot_name}")
-            self.log(f"Archivos guardados en: {output_dir.resolve()}")
+            self.log(f"Files saved in: {output_dir.resolve()}")
             for lang in languages:
                 self.log(f"- {lang}.po")
             
         except Exception as e:
-            self.log(f"\nError durante la traducción: {str(e)}")
+            self.log(f"\nError during translation: {str(e)}")
         finally:
             loop.close()
             self.root.after(100, partial(self.toggle_ui_state, True))
