@@ -314,9 +314,6 @@ class PoTranslatorGUI:
                 delay=1,
                 log_funct=self.log,
             )
-            pot_file = polib.pofile(pot_file_addr)
-            translator._extract_pot_metadata(pot_file)
-            
             for lang in languages:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
@@ -324,9 +321,9 @@ class PoTranslatorGUI:
                 self.log(f"\nTranslating to '{lang}'...")
                 
                 po_file = polib.pofile(pot_file_addr)
-                po_file.metadata = translator._generate_po_metadata(lang)
+                po_file.metadata = translator._generate_po_metadata(lang,pot_file_addr)
                 
-                coro = translator.translate_po_file(potfile=pot_file,pot_file_addr=pot_file_addr, dest_lang=lang)
+                coro = translator.translate_po_file(new_po_file=po_file,pot_file_addr=pot_file_addr, dest_lang=lang)
                 
                 loop.run_until_complete(coro)
                 loop.close()
@@ -420,10 +417,10 @@ class PoTranslatorGUI:
                 # Guardar archivo
                 po_file.save(po_path)
                 self.log(f"Saved translations to {po_path}")
-                
             except Exception as e:
                 self.log(f"Error saving {lang}.po: {str(e)}")
         
+        messagebox.showinfo("Success", "All translations saved successfully")
         self.log("\nAll translations saved successfully!")
     
     def browse_pot_file(self):
