@@ -8,7 +8,7 @@ from datetime import datetime
 import shutil
 
 class PoTranslator:
-    def __init__(self, input_pot_file:str , batch_size: int = 20, delay: float = 1.0 , output_in_source_dir = False,use_output_in_source_dir = False,log_funct = None):
+    def __init__(self, batch_size: int = 20, delay: float = 1.0 , log_funct = None):
         """
         Inicializa el traductor con configuración de lotes y retardo
         
@@ -24,9 +24,6 @@ class PoTranslator:
             'en': 'nplurals=2; plural=(n != 1);',
             'pt': 'nplurals=2; plural=(n != 1);'
         }
-        self.output_in_source_dir = output_in_source_dir
-        self.use_output_in_source_dir = use_output_in_source_dir
-        self.input_pot_file = input_pot_file
         self.batch_size = batch_size
         self.log_funct = log_funct or print
         self.delay = delay
@@ -34,17 +31,8 @@ class PoTranslator:
         self.placeholder_regex = re.compile(
             r'({[^}]+}|%[sdf]|%\(\w+\)[sdf]|%\d+\$[sdf]|\[[^\]]+\])')
     
-        pot_pofile = polib.pofile(input_pot_file)
-        self.source_texts = [entry.msgid for entry in pot_pofile if entry.msgid and not entry.msgstr]
-        self.pot_metadata = self._extract_pot_metadata(pot_pofile)
         
-        pot_name = Path(self.input_pot_file).stem  # Obtiene el nombre sin extensión
-        if self.output_in_source_dir:
-            self.output_dir = Path(self.input_pot_file).parent
-        else:
-            self.output_dir = Path(f"translations/{pot_name}")
-            if not self.output_dir.exists():
-                self.output_dir.mkdir(parents=True)  
+        
     
     def _extract_pot_metadata(self, pot_file: polib.POFile) -> dict:
         """Extrae metadatos relevantes del archivo .pot original"""
@@ -64,9 +52,9 @@ class PoTranslator:
             if field in pot_metadata:
                 metadata[field] = pot_metadata[field]
         
-        return metadata
+        self.pot_metadata = metadata
 
-    def _generate_po_metadata(self, pot_metadata: dict, lang_code: str) -> dict:
+    def _generate_po_metadata(self, lang_code: str) -> dict:
         """Genera metadatos para el archivo .PO basado en el .pot"""
         lang = lang_code.split('_')[0].lower()
         
@@ -85,7 +73,7 @@ class PoTranslator:
             new_metadata['Plural-Forms'] = self.plural_forms_map[lang]
         
         # Combinar con metadatos originales (los originales tienen prioridad)
-        return {**new_metadata, **pot_metadata}
+        return {**new_metadata, **self.pot_metadata}
 
     def _prepare_texts(self, texts: List[str]) -> tuple:
         """
@@ -119,7 +107,7 @@ class PoTranslator:
             restored_texts.append(text)
         return restored_texts
 
-    async def _translate_batch(self, texts: List[str], dest_lang: str) -> List[str]:
+    async def _translate_batch(self, texts: List[str], dest_lang: str ,pot_file_addr:str) -> List[str]:
         """
         Traduce un lote de textos, verificando si ya existen traducciones en el archivo .po de salida.
         """
@@ -128,16 +116,16 @@ class PoTranslator:
 
         # Verificar si ya existe un archivo .po para el idioma en la salida
         texts_to_translate = prepared_texts
-        if self.use_output_in_source_dir:
-            existing_translations = {}
-            output_file = self.output_dir / f"{dest_lang}.po"
-            if output_file.exists():
-                existing_pofile = polib.pofile(output_file)
-                for entry in existing_pofile:
-                    if entry.msgid and entry.msgstr:
-                        existing_translations[entry.msgid] = entry.msgstr
-                self.log_funct(f"{len(existing_translations)} traducciones existentes")
-            texts_to_translate = [text for text in prepared_texts if text not in existing_translations]
+        
+        existing_translations = {}
+        parent_path = Path(pot_file_addr).parent
+        if parent_path:
+            po_file = polib.pofile(parent_path / f"{dest_lang}.po" ) 
+            for entry in po_file:
+                if entry.msgid and entry.msgstr:
+                    existing_translations[entry.msgid] = entry.msgstr
+        self.log_funct(f"{len(existing_translations)} traducciones existentes")
+        texts_to_translate = [text for text in prepared_texts if text not in existing_translations]
             
         
         translations = await self.translator.translate(texts_to_translate, dest=dest_lang)
@@ -161,39 +149,26 @@ class PoTranslator:
 
     async def translate_po_file(
         self,
+        potfile:polib.POFile,
+        pot_file_addr:str,
         dest_lang: str, 
     ):
-        """
-        Traduce un archivo .PO a múltiples idiomas
-        
-        """
-    
-        # Procesar cada idioma de destino
-        # Crear copia del archivo PO para este idioma
-        lang_pofile = polib.pofile(self.input_pot_file)
-        lang_pofile.metadata = self._generate_po_metadata(self.pot_metadata, dest_lang)
-        
-        # Procesar por lotes
-        for i in range(0, len(self.source_texts), self.batch_size):
-            batch = self.source_texts[i:i + self.batch_size]
-            print(f"{dest_lang} {i//self.batch_size + 1}/{(len(self.source_texts)-1)//self.batch_size + 1}")
+        source_texts = [entry.msgid for entry in potfile if entry.msgid and not entry.msgstr]
+        for i in range(0, len(source_texts), self.batch_size):
+            batch = source_texts[i:i + self.batch_size]
+            print(f"{dest_lang} {i//self.batch_size + 1}/{(len(source_texts)-1)//self.batch_size + 1}")
             
-            # Traducir lote
-            translated_batch = await self._translate_batch(batch, dest_lang)
+            translated_batch = await self._translate_batch(batch, dest_lang,pot_file_addr)
             
-            # Actualizar entradas
             for j, translated_text in enumerate(translated_batch):
                 entry_index = i + j
-                if entry_index < len(lang_pofile):
-                    lang_pofile[entry_index].msgstr = translated_text
+                if entry_index < len(potfile):
+                    potfile[entry_index].msgstr = translated_text
             
-            # Pequeña pausa entre lotes
-            if i + self.batch_size < len(self.source_texts):
+            if i + self.batch_size < len(source_texts):
                 await asyncio.sleep(self.delay)
         
-        # Guardar archivo para este idioma
         
         
-        output_file = self.output_dir / f"{dest_lang}.po"
         
-        lang_pofile.save(output_file)
+        
