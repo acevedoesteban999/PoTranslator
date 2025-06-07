@@ -24,7 +24,7 @@ class PoTranslatorGUI:
         self.root.geometry("1200x800")  # Ventana más grande para más columnas
         
         # Variables
-        self.pot_file = tk.StringVar()
+        self.pot_file_addr = tk.StringVar()
         self.selected_languages = {}
         self.log_messages = []
         self.batch_size = tk.IntVar(value=250)
@@ -63,7 +63,7 @@ class PoTranslatorGUI:
         
         ttk.Label(file_frame, text=".Pot File:").grid(row=0, column=0, sticky=tk.W)
         
-        pot_entry = ttk.Entry(file_frame, textvariable=self.pot_file)
+        pot_entry = ttk.Entry(file_frame, textvariable=self.pot_file_addr)
         pot_entry.grid(row=0, column=1, padx=5, sticky=tk.EW)
         
         file_frame.columnconfigure(1, weight=1)
@@ -142,7 +142,7 @@ class PoTranslatorGUI:
     
     def reload_data(self):
         """Recarga los datos desde los archivos .pot y .po"""
-        if not self.pot_file.get():
+        if not self.pot_file_addr.get():
             messagebox.showerror("Error", "No POT file selected")
             return
             
@@ -188,9 +188,9 @@ class PoTranslatorGUI:
     
     def _set_output_in_source_dir(self):
         if self.output_in_source_dir.get():
-            self.output_dir = Path(self.pot_file.get()).parent
+            self.output_dir = Path(self.pot_file_addr.get()).parent
         else:
-            pot_name = Path(self.pot_file.get()).stem 
+            pot_name = Path(self.pot_file_addr.get()).stem 
             self.output_dir = Path(f"translations/{pot_name}")
             if not self.output_dir.exists():
                 self.output_dir.mkdir(parents=True)  
@@ -235,7 +235,7 @@ class PoTranslatorGUI:
     
     def load_pot_for_review(self, code=None, var=None, from_lang_checkbox=False,force_reload=False):
         """Carga el archivo POT y prepara la tabla para revisión"""
-        if not self.pot_file.get():
+        if not self.pot_file_addr.get():
             if not from_lang_checkbox:
                 messagebox.showerror("Error", "You must select a POT file first")
             return False
@@ -250,7 +250,7 @@ class PoTranslatorGUI:
                 return True
                 
             # Leer archivo POT
-            pot_path = Path(self.pot_file.get())
+            pot_path = Path(self.pot_file_addr.get())
             pot_entries = polib.pofile(pot_path)
             
             # Configurar nuevas columnas
@@ -301,7 +301,7 @@ class PoTranslatorGUI:
         if self.is_translating:
             return
             
-        pot_file_addr = self.pot_file.get()
+        pot_file_addr = self.pot_file_addr.get()
         if not pot_file_addr:
             messagebox.showerror("Error", "You must select a POT file")
             return
@@ -335,7 +335,6 @@ class PoTranslatorGUI:
                     )
                     
                     po_file = polib.pofile(pot_file_addr)
-                    po_file.metadata = translator._generate_po_metadata(lang, pot_file_addr)
                     
                     coro = translator.translate_po_file(
                         new_po_file=po_file,
@@ -396,26 +395,26 @@ class PoTranslatorGUI:
     
     
     def save_all_translations(self):
-        """Guarda todas las traducciones editadas en sus archivos .po"""
-        if not self.pot_file.get():
+        if not self.pot_file_addr.get():
             messagebox.showerror("Error", "No POT file loaded")
             return
             
-        pot_path = Path(self.pot_file.get())
+        pot_path = Path(self.pot_file_addr.get())
+        pot_file = polib.pofile(str(pot_path))  # Cargar el archivo POT una sola vez
         
         for lang in self.translation_data:
             try:
-                po_path = pot_path.parent / f"{lang}.po"
+                po_file_path = pot_path.parent / f"{lang}.po"
                 
                 # Crear o cargar archivo PO
-                if po_path.exists():
-                    po_file = polib.pofile(po_path)
+                if po_file_path.exists():
+                    po_file = polib.pofile(str(po_file_path))
                 else:
                     po_file = polib.POFile()
-                    # Copiar metadatos del POT
-                    pot_file = polib.pofile(pot_path)
-                    po_file.metadata = pot_file.metadata
-                    po_file.metadata['Language'] = lang
+                    po_file.metadata = PoTranslator._generate_po_metadata(lang, str(pot_path))
+                
+                # Crear un diccionario de entradas existentes para búsqueda rápida
+                existing_entries = {entry.msgid: entry for entry in po_file}
                 
                 # Actualizar entradas
                 for item in self.review_tree.get_children():
@@ -423,31 +422,39 @@ class PoTranslatorGUI:
                     msgid = values[0]
                     msgstr = values[self.review_columns.index(lang)]
                     
-                    # Buscar entrada existente o crear nueva
-                    entry = None
-                    for e in po_file:
-                        if e.msgid == msgid:
-                            entry = e
+                    # Buscar la entrada correspondiente en el POT para obtener metadatos
+                    pot_entry = None
+                    for entry in pot_file:
+                        if entry.msgid == msgid:
+                            pot_entry = entry
                             break
                     
-                    if entry:
-                        entry.msgstr = msgstr
-                    else:
-                        entry = polib.POEntry(
-                            msgid=msgid,
-                            msgstr=msgstr,
-                            occurrences=[(str(pot_path), "0")]
-                        )
-                        po_file.append(entry)
+                    if pot_entry:
+                        if msgid in existing_entries:
+                            # Actualizar entrada existente
+                            entry = existing_entries[msgid]
+                            entry.msgstr = msgstr
+                        else:
+                            # Crear nueva entrada copiando TODOS los metadatos del POT
+                            new_entry = polib.POEntry(
+                                msgid=msgid,
+                                msgstr=msgstr,
+                                occurrences=pot_entry.occurrences,
+                                comment=pot_entry.comment,        # Comentarios #.
+                                tcomment=pot_entry.tcomment,      # Comentarios #:
+                                flags=pot_entry.flags             # Flags #, 
+                            )
+                            po_file.append(new_entry)
                 
                 # Guardar archivo
-                po_file.save(po_path)
-                self.log(f"Saved translations to {po_path}")
+                po_file.save(str(po_file_path))
+                self.log(f"Saved translations to {po_file_path}")
             except Exception as e:
                 self.log(f"Error saving {lang}.po: {str(e)}")
         
         messagebox.showinfo("Success", "All translations saved successfully")
         self.log("\nAll translations saved successfully!")
+    
     
     def browse_pot_file(self):
         if self.is_translating:
@@ -458,7 +465,7 @@ class PoTranslatorGUI:
             filetypes=[("POT files", "*.pot"), ("All files", "*.*")]
         )
         if file_path:
-            self.pot_file.set(file_path)
+            self.pot_file_addr.set(file_path)
             self.log(f"Selected POT file: {file_path}")
             
             # Habilitar todos los Checkbuttons
@@ -497,12 +504,12 @@ class PoTranslatorGUI:
             self.log_area.delete(1.0, tk.END)
             
     def load_review(self):
-        if not self.pot_file.get():
+        if not self.pot_file_addr.get():
             messagebox.showerror("Error", "You must select a POT file first")
             return
         
         lang = self.review_lang.get()
-        pot_path = Path(self.pot_file.get())
+        pot_path = Path(self.pot_file_addr.get())
         po_path = pot_path.parent / f"{lang}.po"
         
         try:

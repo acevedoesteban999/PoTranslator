@@ -3,10 +3,9 @@ import polib
 import re
 import asyncio
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 from datetime import datetime
-import shutil
-
+        
 class PoTranslator:
     def __init__(self, batch_size: int = 20, delay: float = 1.0 , log_funct = None):
         """
@@ -19,11 +18,6 @@ class PoTranslator:
         """
         self.author_name = "POTRANSLATOR"
         self.author_email = "acevedoesteban999@gmail.com"
-        self.plural_forms_map = {
-            'es': 'nplurals=2; plural=(n != 1);',
-            'en': 'nplurals=2; plural=(n != 1);',
-            'pt': 'nplurals=2; plural=(n != 1);'
-        }
         self.batch_size = batch_size
         self.log_funct = log_funct or print
         self.delay = delay
@@ -34,10 +28,14 @@ class PoTranslator:
         
         
     
-
-    def _generate_po_metadata(self, lang_code: str,pot_file_addr: str) -> dict:
+    @staticmethod
+    def _generate_po_metadata(lang_code: str, pot_file_addr: str) -> dict:
         """Genera metadatos para el archivo .PO basado en el .pot"""
-        
+        plural_forms_map = {
+            'es': 'nplurals=2; plural=(n != 1);',
+            'en': 'nplurals=2; plural=(n != 1);',
+            'pt': 'nplurals=2; plural=(n != 1);'
+        }
         pot_file = polib.pofile(pot_file_addr)
         pot_metadata = {}
         
@@ -54,22 +52,26 @@ class PoTranslator:
             if field in pot_file.metadata:
                 pot_metadata[field] = pot_file.metadata[field]
         
-        
         lang = lang_code.split('_')[0].lower()
+        
+        # Obtener fecha actual en formato estándar
+        current_date = datetime.now().strftime('%Y-%m-%d %H:%M%z')
         
         # Campos que siempre se actualizan
         new_metadata = {
-            'PO-Revision-Date': datetime.now().strftime('%Y-%m-%d %H:%M%z'),
-            'Last-Translator': f'{self.author_name} <{self.author_email}>',
-            'Language-Team': f'{self.author_name} <{self.author_email}>',
+            'PO-Revision-Date': current_date,
+            'Last-Translator': 'PoTranslator <acevedoesteban999@gmail.com>',
+            'Language-Team': 'PoTranslator <acevedoesteban999@gmail.com>',
             'Language': lang_code,
-            # 'MIME-Version': '1.0',
-            # 'X-Generator': 'Odoo Localization Tool'
+            'X-Generator': 'PoTranslator',
+            'X-Poedit-Basepath': '.',
+            'X-Poedit-SourceCharset': 'UTF-8',
+            'X-Poedit-KeywordsList': '_;gettext;gettext_noop',
         }
         
         # Añadir plural forms si está definido para el idioma
-        if lang in self.plural_forms_map:
-            new_metadata['Plural-Forms'] = self.plural_forms_map[lang]
+        if lang in plural_forms_map:
+            new_metadata['Plural-Forms'] = plural_forms_map[lang]
         
         # Combinar con metadatos originales (los originales tienen prioridad)
         return {**new_metadata, **pot_metadata}
