@@ -1,22 +1,57 @@
 # PoTranslator
 
-## Traducción de lectura
+### Traducción de lectura
 
 -   [Inglés](README.md)
 -   [Español](README.es.md)
 -   [portugués](README.pt.md)
 -   [Francés](README.fr.md)
 
-Herramienta para convertir archivos .pot en archivos .po traducidos automáticamente usando Google Translate, con una interfaz gráfica o línea de comandos.
+### GUI POTRANSLATOR - Cómo usar
 
-![Translator Graphical Interface](https://github.com/user-attachments/assets/48377205-6435-4919-b549-091cec595f8f)
+## Descripción general
 
-## Herramienta de traducción para .pot y .po
+Potranslator GUI es una aplicación fácil de usar para traducir y administrar archivos .pot/.po. Le permite traducir cadenas de texto en múltiples idiomas, revisar las traducciones y guardarlas en archivos .po.
 
-## Cómo usar
+![Translator Graphical Interface](media/image1.png)
 
-1.  Instale y active el entorno virtual con las bibliotecas especificadas en requisitos.txt
-2.  Proporcionar acceso a Internet al servicio Python en el entorno virtual
-3.  Ejecutar el archivo`PoTranslatorGUI.py`para la interfaz gráfica o`PoTranslatorConsole.py`para la consola
-4.  Seleccione la ruta del archivo .pot, los idiomas y comience a traducir
-5.  Al finalizar, las traducciones se crearán junto al archivo .pot si la opción`Save files in the POT file directory`se selecciona; de lo contrario, se creará una carpeta en el directorio raíz dentro de`translations`con el nombre del archivo .pot como la carpeta donde se ubicarán las traducciones
+## Empezando
+
+1.  **Iniciar la aplicación**
+    -   Ejecute la aplicación para abrir la ventana principal.
+
+2.  **Seleccione un archivo de olla**
+    -   Haga clic en "Explorar" para seleccionar su archivo .pot (el archivo de plantilla que contiene cadenas originales).
+    -   La aplicación detectará automáticamente las traducciones disponibles en el mismo directorio.
+
+## Características principales
+
+### Gestión de traducción
+
+-   **Seleccionar idiomas de destino**: Marque las casillas de los idiomas que desea traducir a (español, portugués, francés, italiano, alemán, inglés).
+-   **Traducir todo**: Haga clic en "Traducir todo" para traducir automáticamente todos los idiomas seleccionados a la vez.
+-   **Editar traducciones**: Haga doble clic en cualquier celda de traducción para editarla manualmente.
+
+### Revisar y editar
+
+-   Ver todas las cuerdas originales y sus traducciones una al lado de la otra.
+-   La tabla muestra:
+    -   Texto original (desde el archivo .pot)
+    -   Texto traducido para cada idioma seleccionado
+-   Hacer cambios directamente en la tabla.
+
+### Salvando las traducciones
+
+-   Haga clic en "Guardar" para guardar todas las traducciones a sus respectivos archivos .po.
+-   Las traducciones se guardan en el mismo directorio que su archivo .pot.
+
+### Ajustes
+
+-   Ajuste el tamaño de lotes para las operaciones de traducción (cuántas cadenas se procesan a la vez).
+-   Elija si se debe guardar archivos en el directorio de archivos de Pot o en una carpeta de traducciones separadas.
+
+## Tips
+
+-   Siempre revise las traducciones automáticas antes de ahorrar.
+-   La aplicación conserva todos los metadatos existentes (comentarios, banderas) al guardar archivos .po.
+-   Use el botón "Recargar datos" si realiza cambios en los archivos fuera de la aplicación.
