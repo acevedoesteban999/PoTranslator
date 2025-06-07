@@ -1,20 +1,50 @@
 # PoTranslator 
 
-## README Translation
+### README Translation
 - [English](README.md)
 - [Spanish](README.es.md)
 - [Portuguese](README.pt.md)
 - [French](README.fr.md)
 
-Tool to convert .pot files into automatically translated .po files using Google Translate, with a graphical interface or command line.
+### PoTranslator GUI - How to Use
 
-![Translator Graphical Interface](https://github.com/user-attachments/assets/48377205-6435-4919-b549-091cec595f8f)
+## Overview
+PoTranslator GUI is a user-friendly application for translating and managing .pot/.po files. It allows you to translate text strings into multiple languages, review translations, and save them back to .po files.
 
-## Translation Tool for .POT and .PO
-## How to Use
+![Translator Graphical Interface](media/image1.png)
 
-1. Install and activate the virtual environment with the libraries specified in requirements.txt
-2. Provide internet access to the Python service in the virtual environment
-3. Run the file `PoTranslatorGUI.py` for the graphical interface or `PoTranslatorConsole.py` for the console
-4. Select the .pot file path, the languages, and start translating
-5. Upon completion, translations will be created next to the .pot file if the option `Save files in the POT file directory` is selected; otherwise, a folder will be created in the root directory within `translations` with the name of the .pot file as the folder where the translations will be located
+## Getting Started
+
+1. **Launch the Application**
+   - Run the application to open the main window.
+
+2. **Select a POT File**
+   - Click "Browse" to select your .pot file (the template file containing original strings).
+   - The application will automatically detect available translations in the same directory.
+
+## Main Features
+
+### Translation Management
+- **Select Target Languages**: Check the boxes for the languages you want to translate to (Spanish, Portuguese, French, Italian, German, English).
+- **Translate All**: Click "Translate All" to automatically translate all selected languages at once.
+- **Edit Translations**: Double-click any translation cell to manually edit it.
+
+### Review & Edit
+- View all original strings and their translations side by side.
+- The table shows:
+  - Original text (from .pot file)
+  - Translated text for each selected language
+- Make changes directly in the table.
+
+### Saving Translations
+- Click "Save" to save all translations to their respective .po files.
+- Translations are saved in the same directory as your .pot file.
+
+### Settings
+- Adjust batch size for translation operations (how many strings are processed at once).
+- Choose whether to save files in the POT file directory or a separate translations folder.
+
+## Tips
+- Always review automatic translations before saving.
+- The application preserves all existing metadata (comments, flags) when saving .po files.
+- Use the "Reload Data" button if you make changes to the files outside the application.
