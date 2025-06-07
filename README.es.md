@@ -1,4 +1,4 @@
-# PoTranslator
+# Poder
 
 ### Traducción de lectura
 
@@ -50,7 +50,7 @@ Potranslator GUI es una aplicación fácil de usar para traducir y administrar a
 -   Ajuste el tamaño de lotes para las operaciones de traducción (cuántas cadenas se procesan a la vez).
 -   Elija si se debe guardar archivos en el directorio de archivos de Pot o en una carpeta de traducciones separadas.
 
-## Tips
+## Consejos
 
 -   Siempre revise las traducciones automáticas antes de ahorrar.
 -   La aplicación conserva todos los metadatos existentes (comentarios, banderas) al guardar archivos .po.
