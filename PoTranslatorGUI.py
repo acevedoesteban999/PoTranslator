@@ -61,7 +61,7 @@ class PoTranslatorGUI:
         file_frame = ttk.LabelFrame(parent, text="POT File", padding="10")
         file_frame.pack(fill=tk.X, pady=5)
         
-        ttk.Label(file_frame, text=".pot file:").grid(row=0, column=0, sticky=tk.W)
+        ttk.Label(file_frame, text=".Pot File:").grid(row=0, column=0, sticky=tk.W)
         
         pot_entry = ttk.Entry(file_frame, textvariable=self.pot_file)
         pot_entry.grid(row=0, column=1, padx=5, sticky=tk.EW)
@@ -99,6 +99,9 @@ class PoTranslatorGUI:
         btn_frame = ttk.Frame(controls_frame)
         btn_frame.pack(side=tk.RIGHT, padx=5)
         
+        reload_btn = ttk.Button(btn_frame, text="Reload Data", 
+                              command=self.reload_data)
+        reload_btn.pack(side=tk.LEFT, padx=5)
         
         self.translate_all_btn = ttk.Button(btn_frame, text="Translate All", 
                                   command=self.translate_all_selected,state=tk.DISABLED)
@@ -136,6 +139,20 @@ class PoTranslatorGUI:
         
         # Bind para edición
         self.review_tree.bind("<Double-1>", self.on_double_click)
+    
+    def reload_data(self):
+        """Recarga los datos desde los archivos .pot y .po"""
+        if not self.pot_file.get():
+            messagebox.showerror("Error", "No POT file selected")
+            return
+            
+        # Limpiar datos existentes
+        self.translation_data = {}
+        
+        # Volver a cargar los datos
+        if self.load_pot_for_review(force_reload=True):
+            messagebox.showinfo("Success", "Data reloaded successfully")
+            self.log("\nData reloaded from files")
     
     def create_settings_tab(self):
         """Crea la pestaña de configuración"""
@@ -216,7 +233,7 @@ class PoTranslatorGUI:
                 entry.bind("<Return>", save_edit)
     
     
-    def load_pot_for_review(self, code=None, var=None, from_lang_checkbox=False):
+    def load_pot_for_review(self, code=None, var=None, from_lang_checkbox=False,force_reload=False):
         """Carga el archivo POT y prepara la tabla para revisión"""
         if not self.pot_file.get():
             if not from_lang_checkbox:
@@ -229,7 +246,7 @@ class PoTranslatorGUI:
             
             # Si no hay cambios en la selección, no hacer nada
             current_displayed_langs = set(self.review_columns[1:]) if len(self.review_columns) > 1 else set()
-            if current_displayed_langs and set(selected_langs) == current_displayed_langs:
+            if not force_reload and set(selected_langs) == current_displayed_langs:
                 return True
                 
             # Leer archivo POT
@@ -288,10 +305,12 @@ class PoTranslatorGUI:
         if not pot_file_addr:
             messagebox.showerror("Error", "You must select a POT file")
             return
+            
         lang_selected = self.__get_selected_languages()
         if not lang_selected:
             messagebox.showerror("Error", "You must select at least one language")
             return
+            
         self.log("\nStarting translation process for all selected languages...")
         self.log(f"File: {pot_file_addr}")
         self.log(f"Languages: {', '.join(lang_selected)}")
@@ -299,49 +318,56 @@ class PoTranslatorGUI:
         
         self.toggle_ui_state(False)
         
-        # Ejecutar en un hilo separado
-        threading.Thread(
-            target=self.run_translation_all,
-            args=(pot_file_addr, lang_selected, self.batch_size.get()),
-            daemon=True
-        ).start()
-    
-    def run_translation_all(self, pot_file_addr, languages, batch_size):
-        """Ejecuta la traducción para todos los idiomas seleccionados"""
-        try:
-            translator = PoTranslator(
-                batch_size=batch_size, 
-                delay=1,
-                log_funct=self.log,
-            )
-            for lang in languages:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+        # Crear un nuevo event loop para cada idioma
+        def run_translations():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                for lang in lang_selected:
+                    self.log(f"\nTranslating to '{lang}'...")
+                    
+                    # Crear una nueva instancia del traductor para cada idioma
+                    translator = PoTranslator(
+                        batch_size=self.batch_size.get(), 
+                        delay=1,
+                        log_funct=self.log,
+                    )
+                    
+                    po_file = polib.pofile(pot_file_addr)
+                    po_file.metadata = translator._generate_po_metadata(lang, pot_file_addr)
+                    
+                    coro = translator.translate_po_file(
+                        new_po_file=po_file,
+                        pot_file_addr=pot_file_addr,
+                        dest_lang=lang
+                    )
+                    
+                    loop.run_until_complete(coro)
+                    
+                    # Actualizar solo la columna del idioma recién traducido
+                    self.root.after(0, lambda: self.update_translation_column(lang, po_file))
+                    
+                    self.log(f"Translation to '{lang}' completed")
                 
-                self.log(f"\nTranslating to '{lang}'...")
+                self.log(f"\nTranslations {', '.join(lang_selected)} completed successfully")
+                self.root.after(0, lambda: messagebox.showinfo(
+                    "Success", 
+                    f"Translations {', '.join(lang_selected)} completed successfully"
+                ))
                 
-                po_file = polib.pofile(pot_file_addr)
-                po_file.metadata = translator._generate_po_metadata(lang,pot_file_addr)
-                
-                coro = translator.translate_po_file(new_po_file=po_file,pot_file_addr=pot_file_addr, dest_lang=lang)
-                
-                loop.run_until_complete(coro)
+            except Exception as e:
+                self.log(f"\nError during translation: {str(e)}")
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Error", 
+                    f"Error during translation: {str(e)}"
+                ))
+            finally:
+                self.root.after(0, partial(self.toggle_ui_state, True))
                 loop.close()
                 
-                # Actualizar solo la columna del idioma recién traducido
-                self.update_translation_column(lang, po_file)
-                
-                self.log(f"Translation to '{lang}' completed")
-            
-            self.log(f"Translations {', '.join(languages)} completed successfully")
-            messagebox.showinfo("Success", f"Translations {', '.join(languages)} completed successfully")
-            
-        except Exception as e:
-            self.log(f"\nError during translation: {str(e)}")
-            messagebox.showerror("Error", f"\nError during translation: {str(e)}")
-        finally:
-            self.root.after(100, partial(self.toggle_ui_state, True))
-
+        threading.Thread(target=run_translations, daemon=True).start()
+        
     def update_translation_column(self, lang, po_file):
         """Actualiza una columna específica con las nuevas traducciones"""
         if lang not in self.translation_data:
@@ -444,7 +470,7 @@ class PoTranslatorGUI:
             self.save_btn.config(state=tk.NORMAL)
             
             # Cargar datos automáticamente
-            self.load_pot_for_review()
+            self.load_pot_for_review(force_reload=True)
     
     def toggle_ui_state(self, enabled):
         """Enable/disable UI controls during translation"""
