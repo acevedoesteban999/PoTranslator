@@ -229,7 +229,7 @@ class PoTranslatorGUI:
             
             # Si no hay cambios en la selección, no hacer nada
             current_displayed_langs = set(self.review_columns[1:]) if len(self.review_columns) > 1 else set()
-            if set(selected_langs) == current_displayed_langs:
+            if current_displayed_langs and set(selected_langs) == current_displayed_langs:
                 return True
                 
             # Leer archivo POT

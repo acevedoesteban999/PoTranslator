@@ -120,7 +120,7 @@ class PoTranslator:
         parent_path = Path(pot_file_addr).parent
         if parent_path:
             file_path = parent_path / f"{dest_lang}.po"
-            if file_path:
+            if file_path.exists():
                 po_file = polib.pofile( str(file_path) ) 
                 for entry in po_file:
                     if entry.msgid and entry.msgstr:
