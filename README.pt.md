@@ -3,7 +3,7 @@
 ### Readme Tradução
 
 -   [Inglês](README.md)
--   [Espanhol](README.es.md)
+-   [Spanish](README.es.md)
 -   [Português](README.pt.md)
 -   [Francês](README.fr.md)
 
@@ -29,7 +29,7 @@ A Potranslator GUI é um aplicativo fácil de usar para traduzir e gerenciar arq
 ### Gerenciamento de tradução
 
 -   **Selecione os idiomas de destino**: Verifique as caixas para os idiomas para os quais você deseja traduzir (espanhol, português, francês, italiano, alemão, inglês).
--   **Traduzir tudo**: Click "Translate All" to automatically translate all selected languages at once.
+-   **Traduzir tudo**: Clique em "Traduzir tudo" para traduzir automaticamente todos os idiomas selecionados de uma só vez.
 -   **Editar traduções**: Clique duas vezes em qualquer célula de tradução para editá-la manualmente.
 
 ### Revisão e edição
