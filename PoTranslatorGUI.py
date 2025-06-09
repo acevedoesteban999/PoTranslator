@@ -21,9 +21,9 @@ class PoTranslatorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("PoTranslator")
-        self.root.geometry("1200x800")  # Ventana más grande para más columnas
+        self.root.geometry("1200x800") 
         
-        # Variables
+        
         self.pot_file_addr = tk.StringVar()
         self.selected_languages = {}
         self.log_messages = []
@@ -33,32 +33,18 @@ class PoTranslatorGUI:
         self.use_output_in_source_dir = tk.BooleanVar(value=True)
         self.review_lang = tk.StringVar(value="es")
         self.review_data = []
-        self.translation_data = {}  # Almacena las traducciones para edición
+        self.translation_data = {} 
         
-        # Create widgets
+        
         self.create_widgets()
     
     def create_widgets(self):
-        # Main frame
+        
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # POT file section (siempre visible arriba)
-        self.create_pot_file_section(main_frame)
-        
-        # Notebook (pestañas)
-        self.notebook = ttk.Notebook(main_frame)
-        self.notebook.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        # Pestaña de revisión/edición
-        self.create_review_tab()
-        
-        # Pestaña de configuración
-        self.create_settings_tab()
-    
-    def create_pot_file_section(self, parent):
-        """Sección del archivo POT que siempre está visible"""
-        file_frame = ttk.LabelFrame(parent, text="POT File", padding="10")
+        # POT SECTION
+        file_frame = ttk.LabelFrame(main_frame, text="POT File", padding="10")
         file_frame.pack(fill=tk.X, pady=5)
         
         ttk.Label(file_frame, text=".Pot File:").grid(row=0, column=0, sticky=tk.W)
@@ -69,20 +55,27 @@ class PoTranslatorGUI:
         file_frame.columnconfigure(1, weight=1)
         
         ttk.Button(file_frame, text="Browse", command=self.browse_pot_file).grid(row=0, column=2)
+        
+        # Notebook 
+        self.notebook = ttk.Notebook(main_frame)
+        self.create_review_tab()
+        
+        
+        self.notebook.pack(fill=tk.BOTH, expand=True, pady=10)
+        self.create_settings_tab()
+    
     
     def create_review_tab(self):
-        """Crea la pestaña de revisión con edición"""
         review_tab = ttk.Frame(self.notebook)
         self.notebook.add(review_tab, text="Review & Edit")
         
-        # Frame para controles
         controls_frame = ttk.Frame(review_tab, padding="10")
         controls_frame.pack(fill=tk.X)
         
-        # Checkbuttons para selección de idiomas
+        # Checkbuttons 
         lang_frame = ttk.LabelFrame(controls_frame, text="Target Languages", padding="5")
         lang_frame.pack(side=tk.LEFT, padx=5)
-        # self.lang_checkbuttons = []
+
         for i, code in enumerate(self.languages):
             var = tk.BooleanVar()
             cb = ttk.Checkbutton(
@@ -91,37 +84,36 @@ class PoTranslatorGUI:
                 variable=var,
                 command=lambda c=code, v=var: self.load_pot_for_review(c, v,True),
             )
-            # self.lang_checkbuttons.append(cb)
+            
             cb.grid(row=0, column=i, padx=5, pady=2, sticky=tk.W)
             self.selected_languages[code] = var
         
-        # Botones de acción
+        # Buttons
         btn_frame = ttk.Frame(controls_frame)
         btn_frame.pack(side=tk.RIGHT, padx=5)
         
-        reload_btn = ttk.Button(btn_frame, text="Reload Data", 
-                              command=self.reload_data)
-        reload_btn.pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Reload Data", 
+                              command=self.reload_data).pack(side=tk.LEFT, padx=5)
+      
         
-        self.translate_all_btn = ttk.Button(btn_frame, text="Translate All", 
-                                  command=self.translate_all_selected,state=tk.DISABLED)
-        self.translate_all_btn.pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Translate All", 
+                                  command=self.translate_all_selected).pack(side=tk.LEFT, padx=5)
+       
         
         
-        self.save_btn = ttk.Button(btn_frame, text="Save", 
-                  command=self.save_all_translations,state=tk.DISABLED)
-        self.save_btn.pack(side=tk.LEFT, padx=5)
-        # Treeview para mostrar/editar traducciones
+        ttk.Button(btn_frame, text="Save", 
+                  command=self.save_all_translations).pack(side=tk.LEFT, padx=5)
+        
+        # Treeview 
         tree_frame = ttk.Frame(review_tab)
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        # Columnas dinámicas (Original + idiomas seleccionados)
-        self.review_columns = ["Original"]
+        # Columns
+        self.review_columns = ["Main"]
         self.review_tree = ttk.Treeview(tree_frame, columns=self.review_columns, show="headings", height=25)
         
-        # Configurar columnas
-        self.review_tree.heading("Original", text="Original Text (.pot)")
-        self.review_tree.column("Original", width=400, stretch=tk.YES)
+        self.review_tree.heading("Main", text="Main Text (.pot)")
+        self.review_tree.column("Main", width=400, stretch=tk.YES)
         
         # Scrollbars
         yscroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.review_tree.yview)
@@ -141,21 +133,17 @@ class PoTranslatorGUI:
         self.review_tree.bind("<Double-1>", self.on_double_click)
     
     def reload_data(self):
-        """Recarga los datos desde los archivos .pot y .po"""
         if not self.pot_file_addr.get():
             messagebox.showerror("Error", "No POT file selected")
             return
             
-        # Limpiar datos existentes
         self.translation_data = {}
         
-        # Volver a cargar los datos
         if self.load_pot_for_review(force_reload=True):
             messagebox.showinfo("Success", "Data reloaded successfully")
             self.log("\nData reloaded from files")
     
     def create_settings_tab(self):
-        """Crea la pestaña de configuración"""
         settings_tab = ttk.Frame(self.notebook)
         self.notebook.add(settings_tab, text="Settings")
         
@@ -196,22 +184,21 @@ class PoTranslatorGUI:
                 self.output_dir.mkdir(parents=True)  
     
     def on_double_click(self, event):
-        """Permite editar las celdas de traducción"""
         region = self.review_tree.identify("region", event.x, event.y)
         if region == "cell":
             column = self.review_tree.identify_column(event.x)
             item = self.review_tree.identify_row(event.y)
             
-            # Solo permitir editar columnas de idiomas (no la columna Original)
+            # No edit main column
             if column != "#1":
                 col_index = int(column[1:]) - 1
                 lang = self.review_columns[col_index]
                 
-                # Obtener coordenadas y valor actual
+               
                 x, y, width, height = self.review_tree.bbox(item, column)
                 current_value = self.review_tree.item(item, "values")[col_index]
                 
-                # Crear Entry para edición
+                
                 entry = ttk.Entry(self.review_tree)
                 entry.place(x=x, y=y, width=width, height=height)
                 entry.insert(0, current_value)
@@ -223,7 +210,7 @@ class PoTranslatorGUI:
                     values[col_index] = new_value
                     self.review_tree.item(item, values=values)
                     
-                    # Actualizar datos en memoria
+                  
                     msgid = self.review_tree.item(item, "values")[0]
                     self.translation_data[lang][msgid] = new_value
                     
@@ -232,46 +219,38 @@ class PoTranslatorGUI:
                 entry.bind("<FocusOut>", lambda e: entry.destroy())
                 entry.bind("<Return>", save_edit)
     
-    
     def load_pot_for_review(self, code=None, var=None, from_lang_checkbox=False,force_reload=False):
-        """Carga el archivo POT y prepara la tabla para revisión"""
         if not self.pot_file_addr.get():
             if not from_lang_checkbox:
                 messagebox.showerror("Error", "You must select a POT file first")
             return False
         
         try:
-            # Obtener idiomas seleccionados actualmente
             selected_langs = self.__get_selected_languages()
             
-            # Si no hay cambios en la selección, no hacer nada
             current_displayed_langs = set(self.review_columns[1:]) if len(self.review_columns) > 1 else set()
             if not force_reload and set(selected_langs) == current_displayed_langs:
                 return True
                 
-            # Leer archivo POT
             pot_path = Path(self.pot_file_addr.get())
             pot_entries = polib.pofile(pot_path)
             
-            # Configurar nuevas columnas
-            new_columns = ["Original"] + selected_langs
+            new_columns = ["Main"] + selected_langs
             
-            # 1. Configurar todas las columnas del Treeview
             self.review_tree['columns'] = new_columns
             
-            # 2. Configurar encabezados y propiedades de las columnas
             for col in new_columns:
                 self.review_tree.heading(col, text=col)
                 self.review_tree.column(col, width=300, stretch=tk.YES)
             
             self.review_columns = new_columns
             
-            # Inicializar/actualizar estructura de datos para traducciones
+            self.translation_data = {}
+            
             for lang in selected_langs:
                 if lang not in self.translation_data:
                     self.translation_data[lang] = {}
                     
-                # Cargar datos existentes de archivos PO
                 po_path = pot_path.parent / f"{lang}.po"
                 if po_path.exists():
                     po_entries = polib.pofile(po_path)
@@ -279,7 +258,6 @@ class PoTranslatorGUI:
                         if entry.msgid:
                             self.translation_data[lang][entry.msgid] = entry.msgstr
             
-            # Limpiar y volver a llenar el treeview
             for item in self.review_tree.get_children():
                 self.review_tree.delete(item)
                 
@@ -392,61 +370,34 @@ class PoTranslatorGUI:
                     self.load_pot_for_review()
                     break
     
-    
-    
     def save_all_translations(self):
         if not self.pot_file_addr.get():
             messagebox.showerror("Error", "No POT file loaded")
             return
-            
+        if not self.translation_data:
+            messagebox.showerror("Error", "No Language Selected")
+            return
+        
         pot_path = Path(self.pot_file_addr.get())
-        pot_file = polib.pofile(str(pot_path))  # Cargar el archivo POT una sola vez
         
         for lang in self.translation_data:
             try:
-                po_file_path = pot_path.parent / f"{lang}.po"
                 
-                # Crear o cargar archivo PO
-                if po_file_path.exists():
-                    po_file = polib.pofile(str(po_file_path))
-                else:
-                    po_file = polib.POFile()
-                    po_file.metadata = PoTranslator._generate_po_metadata(lang, str(pot_path))
-                
-                # Crear un diccionario de entradas existentes para búsqueda rápida
-                existing_entries = {entry.msgid: entry for entry in po_file}
-                
-                # Actualizar entradas
+                po_file = polib.pofile(str(pot_path))
+                po_file.metadata = PoTranslator._generate_po_metadata(lang, str(pot_path))
+                entries = {}
                 for item in self.review_tree.get_children():
                     values = self.review_tree.item(item, "values")
                     msgid = values[0]
                     msgstr = values[self.review_columns.index(lang)]
+                    entries.update({
+                        msgid:msgstr
+                    })
                     
-                    # Buscar la entrada correspondiente en el POT para obtener metadatos
-                    pot_entry = None
-                    for entry in pot_file:
-                        if entry.msgid == msgid:
-                            pot_entry = entry
-                            break
+                for entry in po_file:
+                    entry.msgstr = entries.get(entry.msgid)
                     
-                    if pot_entry:
-                        if msgid in existing_entries:
-                            # Actualizar entrada existente
-                            entry = existing_entries[msgid]
-                            entry.msgstr = msgstr
-                        else:
-                            # Crear nueva entrada copiando TODOS los metadatos del POT
-                            new_entry = polib.POEntry(
-                                msgid=msgid,
-                                msgstr=msgstr,
-                                occurrences=pot_entry.occurrences,
-                                comment=pot_entry.comment,        # Comentarios #.
-                                tcomment=pot_entry.tcomment,      # Comentarios #:
-                                flags=pot_entry.flags             # Flags #, 
-                            )
-                            po_file.append(new_entry)
-                
-                # Guardar archivo
+                po_file_path = pot_path.parent / f"{lang}.po"
                 po_file.save(str(po_file_path))
                 self.log(f"Saved translations to {po_file_path}")
             except Exception as e:
@@ -454,7 +405,6 @@ class PoTranslatorGUI:
         
         messagebox.showinfo("Success", "All translations saved successfully")
         self.log("\nAll translations saved successfully!")
-    
     
     def browse_pot_file(self):
         if self.is_translating:
@@ -467,22 +417,12 @@ class PoTranslatorGUI:
         if file_path:
             self.pot_file_addr.set(file_path)
             self.log(f"Selected POT file: {file_path}")
-            
-            # Habilitar todos los Checkbuttons
-            # for cb in self.lang_checkbuttons:
-            #     cb.config(state=tk.NORMAL)
-                
-            # Habilitar botones principales
-            self.translate_all_btn.config(state=tk.NORMAL)
-            self.save_btn.config(state=tk.NORMAL)
-            
             # Cargar datos automáticamente
             self.load_pot_for_review(force_reload=True)
     
     def toggle_ui_state(self, enabled):
         """Enable/disable UI controls during translation"""
         self.is_translating = not enabled
-        self.translate_all_btn.config(state=tk.NORMAL if enabled else tk.DISABLED)
         
         # Disable all language checkboxes
         for widget in self.root.winfo_children():
@@ -517,7 +457,7 @@ class PoTranslatorGUI:
             for item in self.review_tree.get_children():
                 self.review_tree.delete(item)
                 
-            # Leer archivo POT (original)
+            # Leer archivo POT (Main)
             pot_entries = self.read_po_entries(pot_path)
             
             # Leer archivo PO (traducción) si existe
