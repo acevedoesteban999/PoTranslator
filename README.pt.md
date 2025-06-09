@@ -3,7 +3,7 @@
 ### Readme Tradução
 
 -   [Inglês](README.md)
--   [Spanish](README.es.md)
+-   [Espanhol](README.es.md)
 -   [Português](README.pt.md)
 -   [Francês](README.fr.md)
 
