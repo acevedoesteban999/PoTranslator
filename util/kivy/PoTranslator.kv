@@ -1,0 +1,153 @@
+<LanguageCheckBox@BoxLayout>:
+    lang: ''
+    CheckBox:
+        size_hint_x: None
+        width: 30
+        on_active: app.root.toggle_language(root.lang, self.active)
+    Label:
+        text: root.lang.upper() if root.lang else ''
+        size_hint_x: None
+        width: 50
+
+<EditableCell@TextInput>:
+    multiline: False
+    background_color: (0.95, 0.95, 0.95, 1) if self.focus else (1, 1, 1, 1)
+    background_active: ''
+    background_normal: ''
+    padding: [10, 5]
+
+<PoTranslatorGUI>:
+    do_default_tab: False
+    tab_pos: 'top_mid'
+    tab_width: 200
+    
+    TabbedPanelItem:
+        text: 'Review & Edit'
+        ScrollView:
+            BoxLayout:
+                orientation: 'vertical'
+                padding: 10
+                spacing: 10
+                
+                BoxLayout:
+                    size_hint_y: None
+                    height: 50
+                    Label:
+                        text: '.POT File:'
+                        size_hint_x: None
+                        width: 100
+                    TextInput:
+                        id: pot_file_input
+                        text: root.pot_file_addr
+                        on_text: root.pot_file_addr = self.text
+                    Button:
+                        text: 'Browse'
+                        size_hint_x: None
+                        width: 100
+                        on_press: root.browse_pot_file()
+                
+                BoxLayout:
+                    size_hint_y: None
+                    height: 50
+                    Label:
+                        text: 'Target Languages:'
+                        size_hint_x: None
+                        width: 120
+                    GridLayout:
+                        cols: 6
+                        spacing: 10
+                        padding: 5
+                        LanguageCheckBox:
+                            lang: 'es'
+                        LanguageCheckBox:
+                            lang: 'pt'
+                        LanguageCheckBox:
+                            lang: 'fr'
+                        LanguageCheckBox:
+                            lang: 'it'
+                        LanguageCheckBox:
+                            lang: 'de'
+                        LanguageCheckBox:
+                            lang: 'en'
+                
+                BoxLayout:
+                    size_hint_y: None
+                    height: 50
+                    Button:
+                        text: 'Reload Data'
+                        on_press: root.load_pot_for_review(force_reload=True)
+                    Button:
+                        text: 'Translate All'
+                        disabled: root.is_translating
+                        on_press: root.translate_all_selected()
+                    Button:
+                        text: 'Save'
+                        on_press: root.save_all_translations()
+                
+                ScrollView:
+                    GridLayout:
+                        id: translation_grid
+                        cols: len(root.review_columns) if root.review_columns else 1
+                        size_hint_y: None
+                        height: max(self.minimum_height, 500)
+                        spacing: 2
+                        padding: 5
+                        
+                        # Encabezados de columna
+                        Label:
+                            text: 'Main'
+                            size_hint_y: None
+                            height: 40
+                            bold: True
+                            canvas.before:
+                                Color:
+                                    rgba: 0.8, 0.8, 0.8, 1
+                                Rectangle:
+                                    pos: self.pos
+                                    size: self.size
+    TabbedPanelItem:
+        text: 'Settings'
+        ScrollView:
+            BoxLayout:
+                orientation: 'vertical'
+                padding: 10
+                spacing: 10
+                size_hint_y: None
+                height: max(self.minimum_height, root.height)
+                
+                BoxLayout:
+                    size_hint_y: None
+                    height: 50
+                    Label:
+                        text: 'Batch size:'
+                        size_hint_x: None
+                        width: 100
+                    TextInput:
+                        text: str(root.batch_size)
+                        input_filter: 'int'
+                        on_text: root.batch_size = int(self.text) if self.text.isdigit() else root.batch_size
+                
+                BoxLayout:
+                    size_hint_y: None
+                    height: 50
+                    CheckBox:
+                        active: root.output_in_source_dir
+                        on_active: root.output_in_source_dir = self.active
+                    Label:
+                        text: 'Save files in the POT file directory'
+                
+                Label:
+                    text: 'Execution Logs:'
+                    size_hint_y: None
+                    height: 30
+                    bold: True
+                
+                ScrollView:
+                    TextInput:
+                        id: log_area
+                        text: '\n'.join(root.log_messages)
+                        readonly: True
+                        background_color: (0.95, 0.95, 0.95, 1)
+                        foreground_color: (0, 0, 0, 1)
+                        font_name: 'RobotoMono-Regular.ttf'
+                        font_size: 14
