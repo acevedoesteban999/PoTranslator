@@ -313,21 +313,13 @@ class PoTranslatorGUI(TabbedPanel):
         
         for lang in self.selected_languages:
             try:
-                # Create a new PO file based on the POT file
                 po_file = polib.pofile(str(pot_path))
-                
-                # Update metadata
                 po_file.metadata = PoTranslator._generate_po_metadata(lang, str(pot_path))
                 
-                # Create a dictionary with all translations for this language
-                translations = {row['Original']: row.get(lang, "") for row in self.review_data}
-                
-                # Update each entry in the PO file
                 for entry in po_file:
-                    if entry.msgid in translations:
-                        entry.msgstr = translations[entry.msgid]
+                    if entry.msgid in self.review_data[lang]:
+                        entry.msgstr = self.review_data[lang][entry.msgid]
                 
-                # Save the PO file
                 po_file_path = pot_path.parent / f"{lang}.po"
                 po_file.save(str(po_file_path))
                 print(f"Saved translations to {po_file_path}")
