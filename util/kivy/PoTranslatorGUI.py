@@ -64,7 +64,6 @@ class PoTranslatorGUI(TabbedPanel):
         self.set_ui_state(False)
     
     def set_ui_state(self, enabled):
-        """Habilita o deshabilita toda la UI excepto el campo de búsqueda"""
         self.ui_enable = enabled
         for child_name,child in self.ids.items():
             if child_name not in ['pot_file_box_layout','pot_file_input', 'browse_button']:
@@ -90,7 +89,7 @@ class PoTranslatorGUI(TabbedPanel):
         def select_file(instance):
             if file_chooser.selection:
                 selected_file = file_chooser.selection[0]
-                self.ids.pot_file_input.text = selected_file  # Actualiza el TextInput
+                self.ids.pot_file_input.text = selected_file
                 self._validate_and_load_file(selected_file)
             popup.dismiss()
             
@@ -108,27 +107,26 @@ class PoTranslatorGUI(TabbedPanel):
         self.set_ui_state(False)
         
         if not file_path.lower().endswith('.pot'):
-            self.log("Error: El archivo debe tener extensión .pot")
+            print("Error: El archivo debe tener extensión .pot")
             self.show_message("Error", "Por favor selecciona un archivo .pot válido")
             return
         
         try:
-            # Verificar si el archivo existe
+            
             if not Path(file_path).exists():
-                self.log(f"Error: Archivo no encontrado - {file_path}")
-                self.show_message("Error", "El archivo no existe")
+                print(f"Error: File dont Found - {file_path}")
+                self.show_message("Error", f"File dont Found - {file_path}")
                 return
             
-            # Actualizar la propiedad
             self.pot_file_addr = file_path
             
-            self.log(f"Archivo POT cargado: {self.pot_file_addr}")
+            print(f"POT: {self.pot_file_addr}")
             self.load_pot_for_review(force_reload=True)
             self.set_ui_state(True)
     
         except Exception as e:
-            self.log(f"Error al cargar el archivo: {str(e)}")
-            self.show_message("Error", f"No se pudo cargar el archivo: {str(e)}")
+            print(f"Error: {str(e)}")
+            self.show_message("Error", f"{str(e)}")
         
     
     def toggle_language(self, lang, active):
@@ -149,14 +147,12 @@ class PoTranslatorGUI(TabbedPanel):
         try:
             pot_path = Path(self.pot_file_addr)
             if not pot_path.exists():
-                self.log(f"Error: POT file not found at {self.pot_file_addr}")
+                print(f"Error: POT file not found at {self.pot_file_addr}")
                 return False
                 
-            # Load POT file entries
             if force_reload:
                 pot_entries = polib.pofile(str(pot_path))
                 self.review_data['Original'] = {entry.msgid : entry.msgstr for entry in pot_entries if entry.msgid}
-            # Load translations for selected languages
             for lang in self.selected_languages:
                 po_path = pot_path.parent / f"{lang}.po"
                 
@@ -165,39 +161,36 @@ class PoTranslatorGUI(TabbedPanel):
                         po_entries = polib.pofile(str(po_path))
                         translations = {entry.msgid: entry.msgstr for entry in po_entries if entry.msgid}
                         
-                        # Update the review data with translations
                         self.review_data[lang] = {}
                         for msgid,_ in self.review_data['Original'].items():
                             self.review_data[lang][msgid] = translations.get(msgid, "")
                     except Exception as e:
-                        self.log(f"Error loading {lang}.po: {str(e)}")
+                        print(f"Error loading {lang}.po: {str(e)}")
                         continue
                 else:
-                    # If PO file doesn't exist, initialize with empty strings
                     self.review_data[lang] = {}
             
             
-            # Update the UI grid
             self.update_translation_grid()
             
-            self.log(f"\nLoaded POT file with {len(self.review_data)} entries")
+            print(f"\nLoaded POT file with {len(self.review_data)} entries")
             if self.selected_languages:
-                self.log(f"Displaying translations for: {', '.join(self.selected_languages)}")
+                print(f"Displaying translations for: {', '.join(self.selected_languages)}")
             return True
             
         except Exception as e:
-            self.log(f"Failed to load POT file: {str(e)}")
+            print(f"Failed to load POT file: {str(e)}")
             return False
     
     def update_translation_column(self, lang, po_file):
         """Update the translation column for a specific language"""
         translations = {entry.msgid: entry.msgstr for entry in po_file if entry.msgid}
         
-        for row in self.review_data:
-            original_msg = row['Original']
-            row[lang] = translations.get(original_msg, "")
+        msgids = list(self.review_data.get('Original', {}).keys())
         
-        self.update_translation_grid()
+        for msgid in msgids:
+            self.review_data[lang][msgid] = translations.get(msgid)
+        
     
     def update_translation_grid(self):
         if 'translation_grid' not in self.ids:
@@ -206,28 +199,20 @@ class PoTranslatorGUI(TabbedPanel):
         grid = self.ids.translation_grid
         grid.clear_widgets()
         
-        # Obtener todas las claves (msgids) de la columna 'Original'
         msgids = list(self.review_data.get('Original', {}).keys())
         
-        # Configurar el GridLayout
-        num_columns = len(self.review_data)  # Número de columnas (idiomas + original)
-        num_rows = len(msgids) + 1          # +1 para la fila de encabezados
+        grid.cols = len(self.review_data) 
+        grid.rows =  len(msgids) + 1 
         
-        grid.cols = num_columns
-        grid.rows = num_rows
-        
-        # 1. Primero añadir los encabezados de columna
         for lang in self.review_data.keys():
             lbl = Label(text=lang, size_hint_y=None, height=40, bold=True)
             lbl.canvas.before.add(Color(rgba=(0.8, 0.8, 0.8, 1)))
             lbl.canvas.before.add(Rectangle(pos=lbl.pos, size=lbl.size))
             grid.add_widget(lbl)
         
-        # 2. Luego añadir los datos por columnas
         for msgid in msgids:
             for lang, column_data in self.review_data.items():
                 if lang == 'Original':
-                    # Celda no editable para el texto original
                     lbl = Label(text=msgid if msgid else '', 
                             size_hint_y=None, height=40,
                             text_size=(None, None), halign='left', valign='middle')
@@ -235,17 +220,14 @@ class PoTranslatorGUI(TabbedPanel):
                     lbl.canvas.before.add(Rectangle(pos=lbl.pos, size=lbl.size))
                     grid.add_widget(lbl)
                 else:
-                    # Celda editable para las traducciones
                     txt = EditableCell(text=column_data.get(msgid, ''), 
                                     size_hint_y=None, height=40)
                     txt.bind(text=partial(self.on_cell_edit, lang, msgid))
                     grid.add_widget(txt)
         
-        # Actualizar altura del GridLayout
         grid.height = max(grid.minimum_height, 500)
 
     def on_cell_edit(self, lang, msgid, instance, value):
-        """Actualiza el dato cuando se edita una celda"""
         if lang in self.review_data and msgid in self.review_data[lang]:
             self.review_data[lang][msgid] = value
     
@@ -254,17 +236,17 @@ class PoTranslatorGUI(TabbedPanel):
             return
             
         if not self.pot_file_addr:
-            self.log("Error: You must select a POT file")
+            print("Error: You must select a POT file")
             return
             
         if not self.selected_languages:
-            self.log("Error: You must select at least one language")
+            print("Error: You must select at least one language")
             return
             
-        self.log("\nStarting translation process for all selected languages...")
-        self.log(f"File: {self.pot_file_addr}")
-        self.log(f"Languages: {', '.join(self.selected_languages)}")
-        self.log(f"Batch size: {self.batch_size}")
+        print("\nStarting translation process for all selected languages...")
+        print(f"File: {self.pot_file_addr}")
+        print(f"Languages: {', '.join(self.selected_languages)}")
+        print(f"Batch size: {self.batch_size}")
         
         self.is_translating = True
         
@@ -273,14 +255,14 @@ class PoTranslatorGUI(TabbedPanel):
             asyncio.set_event_loop(loop)
             
             try:
+                translator = PoTranslator(
+                    batch_size=self.batch_size, 
+                    delay=1,
+                    log_funct=print,
+                )
                 for lang in self.selected_languages:
-                    self.log(f"\nTranslating to '{lang}'...")
+                    print(f"\nTranslating to '{lang}'...")
                     
-                    translator = PoTranslator(
-                        batch_size=self.batch_size, 
-                        delay=1,
-                        log_funct=self.log,
-                    )
                     
                     po_file = polib.pofile(self.pot_file_addr)
                     
@@ -292,22 +274,23 @@ class PoTranslatorGUI(TabbedPanel):
                     
                     loop.run_until_complete(coro)
                     
-                    # Update the UI with new translations
-                    def update_ui():
-                        self.update_translation_column(lang, po_file)
+                    self.update_translation_column(lang, po_file)
                     
+                    def update_ui():
+                        self.update_translation_grid()
+                        
                     Clock.schedule_once(lambda dt: update_ui())
                     
-                    self.log(f"Translation to '{lang}' completed")
+                    print(f"Translation to '{lang}' completed")
                 
-                self.log(f"\nTranslations {', '.join(self.selected_languages)} completed successfully")
+                print(f"\nTranslations {', '.join(self.selected_languages)} completed successfully")
                 Clock.schedule_once(lambda dt: self.show_message(
                     "Success", 
                     f"Translations {', '.join(self.selected_languages)} completed successfully"
                 ))
                 
             except Exception as e:
-                self.log(f"\nError during translation: {str(e)}")
+                print(f"\nError during translation: {str(e)}")
                 Clock.schedule_once(lambda dt: self.show_message(
                     "Error", 
                     f"Error during translation: {str(e)}"
@@ -320,10 +303,10 @@ class PoTranslatorGUI(TabbedPanel):
     
     def save_all_translations(self):
         if not self.pot_file_addr:
-            self.log("Error: No POT file loaded")
+            print("Error: No POT file loaded")
             return
         if not self.selected_languages:
-            self.log("Error: No Language Selected")
+            print("Error: No Language Selected")
             return
         
         pot_path = Path(self.pot_file_addr)
@@ -347,12 +330,12 @@ class PoTranslatorGUI(TabbedPanel):
                 # Save the PO file
                 po_file_path = pot_path.parent / f"{lang}.po"
                 po_file.save(str(po_file_path))
-                self.log(f"Saved translations to {po_file_path}")
+                print(f"Saved translations to {po_file_path}")
             except Exception as e:
-                self.log(f"Error saving {lang}.po: {str(e)}")
+                print(f"Error saving {lang}.po: {str(e)}")
         
         self.show_message("Success", "All translations saved successfully")
-        self.log("\nAll translations saved successfully!")
+        print("\nAll translations saved successfully!")
     
     def show_message(self, title, message):
         content = BoxLayout(orientation='vertical', padding=10)
@@ -363,8 +346,3 @@ class PoTranslatorGUI(TabbedPanel):
         popup = Popup(title=title, content=content, size_hint=(0.8, 0.4))
         btn.bind(on_press=popup.dismiss)
         popup.open()
-    
-    def log(self, message):
-        self.log_messages.append(message)
-        # Auto-scroll to the bottom
-        Clock.schedule_once(lambda dt: setattr(self.ids.log_area, 'cursor', (0, len(self.ids.log_area.text))))

@@ -92,50 +92,36 @@
                         size_hint_y: None
                         spacing: 2
                         padding: 5
-    TabbedPanelItem:
-        id: tab_settings
-        text: 'Settings'
-        ScrollView:
-            BoxLayout:
-                orientation: 'vertical'
-                padding: 10
-                spacing: 10
-                size_hint_y: None
-                height: max(self.minimum_height, root.height)
+    # TabbedPanelItem:
+    #     id: tab_settings
+    #     text: 'Settings'
+    #     ScrollView:
+    #         BoxLayout:
+    #             orientation: 'vertical'
+    #             padding: 10
+    #             spacing: 10
+    #             size_hint_y: None
+    #             height: max(self.minimum_height, root.height)
                 
-                BoxLayout:
-                    size_hint_y: None
-                    height: 50
-                    Label:
-                        text: 'Batch size:'
-                        size_hint_x: None
-                        width: 100
-                    TextInput:
-                        text: str(root.batch_size)
-                        input_filter: 'int'
-                        on_text: root.batch_size = int(self.text) if self.text.isdigit() else root.batch_size
+    #             BoxLayout:
+    #                 size_hint_y: None
+    #                 height: 50
+    #                 Label:
+    #                     text: 'Batch size:'
+    #                     size_hint_x: None
+    #                     width: 100
+    #                 TextInput:
+    #                     text: str(root.batch_size)
+    #                     input_filter: 'int'
+    #                     on_text: root.batch_size = int(self.text) if self.text.isdigit() else root.batch_size
                 
-                BoxLayout:
-                    size_hint_y: None
-                    height: 50
-                    CheckBox:
-                        active: root.output_in_source_dir
-                        on_active: root.output_in_source_dir = self.active
-                    Label:
-                        text: 'Save files in the POT file directory'
+    #             BoxLayout:
+    #                 size_hint_y: None
+    #                 height: 50
+    #                 CheckBox:
+    #                     active: root.output_in_source_dir
+    #                     on_active: root.output_in_source_dir = self.active
+    #                 Label:
+    #                     text: 'Save files in the POT file directory'
                 
-                Label:
-                    text: 'Execution Logs:'
-                    size_hint_y: None
-                    height: 30
-                    bold: True
                 
-                ScrollView:
-                    TextInput:
-                        id: log_area
-                        text: '\n'.join(root.log_messages)
-                        readonly: True
-                        background_color: (0.95, 0.95, 0.95, 1)
-                        foreground_color: (0, 0, 0, 1)
-                        font_name: 'RobotoMono-Regular.ttf'
-                        font_size: 14
