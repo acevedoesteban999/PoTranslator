@@ -9,12 +9,6 @@
         size_hint_x: None
         width: 50
 
-<EditableCell@TextInput>:
-    multiline: False
-    background_color: (0.95, 0.95, 0.95, 1) if self.focus else (1, 1, 1, 1)
-    background_active: ''
-    background_normal: ''
-    padding: [10, 5]
 
 <PoTranslatorGUI>:
     do_default_tab: False
@@ -39,7 +33,7 @@
                     TextInput:
                         id: pot_file_input
                         text: root.pot_file_addr
-                        on_text: root.pot_file_addr = self.text
+                        on_text: root.handle_pot_file_selection(self.text)
                     Button:
                         text: 'Browse'
                         size_hint_x: None
@@ -87,24 +81,9 @@
                 ScrollView:
                     GridLayout:
                         id: translation_grid
-                        cols: len(root.review_columns) if root.review_columns else 1
                         size_hint_y: None
-                        height: max(self.minimum_height, 500)
                         spacing: 2
                         padding: 5
-                        
-                        # Encabezados de columna
-                        Label:
-                            text: 'Main'
-                            size_hint_y: None
-                            height: 40
-                            bold: True
-                            canvas.before:
-                                Color:
-                                    rgba: 0.8, 0.8, 0.8, 1
-                                Rectangle:
-                                    pos: self.pos
-                                    size: self.size
     TabbedPanelItem:
         text: 'Settings'
         ScrollView:

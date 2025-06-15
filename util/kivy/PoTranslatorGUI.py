@@ -22,6 +22,27 @@ from kivy.graphics import Rectangle, Color
 from kivy.uix.label import Label
 from functools import partial
 
+class EditableCell(TextInput):
+    def __init__(self, **kwargs):
+        super(EditableCell, self).__init__(**kwargs)
+        self.multiline = False
+        self.background_active = ''
+        self.background_normal = ''
+        self.padding = [10, 5]
+        
+        # Propiedad para manejar el color de fondo
+        self.background_color = (0.95, 0.95, 0.95, 1)  # Valor inicial
+        
+        # Bind para cambiar el color cuando cambia el foco
+        self.bind(focus=self._on_focus_change)
+    
+    def _on_focus_change(self, instance, value):
+        """Actualiza el color de fondo basado en el estado de foco"""
+        if value:  # Si tiene el foco
+            self.background_color = (1, 1, 1, 1)  # Blanco
+        else:      # Si pierde el foco
+            self.background_color = (0.95, 0.95, 0.95, 1)  # Gris claro
+
 class PoTranslatorGUI(TabbedPanel):
     languages = ["es", "pt", "fr", "it", "de", "en"]
     
@@ -32,15 +53,13 @@ class PoTranslatorGUI(TabbedPanel):
     log_messages = ListProperty([])
     selected_languages = ListProperty([])
     translation_data = ObjectProperty({})
-    review_columns = ListProperty([])
-    review_data = ListProperty([])
+    review_data = ObjectProperty({})
     
     def __init__(self, **kwargs):
         super(PoTranslatorGUI, self).__init__(**kwargs)
         self.selected_languages = []
         self.translation_data = {}
-        self.review_columns = ['Main']
-        self.review_data = []
+        self.review_data = {'Original':{}}
         
     def browse_pot_file(self):
         content = BoxLayout(orientation='vertical')
@@ -62,13 +81,42 @@ class PoTranslatorGUI(TabbedPanel):
         def select_file(instance):
             if file_chooser.selection:
                 self.pot_file_addr = file_chooser.selection[0]
-                self.log(f"Selected POT file: {self.pot_file_addr}")
-                self.load_pot_for_review(force_reload=True)
+                self.ids.pot_file_input.text = self.pot_file_addr
+                self.handle_pot_file_selection(self.pot_file_addr)
             popup.dismiss()
             
         btn_cancel.bind(on_press=dismiss_popup)
         btn_select.bind(on_press=select_file)
         popup.open()
+        
+    def handle_pot_file_selection(self, text:str=None):
+        """Función común para manejar la selección del archivo POT"""
+        # Si se pasa el texto como parámetro (desde TextInput), actualizamos pot_file_addr
+        
+        if not text:
+            return
+        
+        # Validación de extensión .pot
+        if not text.lower().endswith('.pot'):
+            self.log("Error: El archivo debe tener extensión .pot")
+            self.show_message("Error", "Por favor selecciona un archivo .pot válido")
+            return
+        
+        
+        try:
+            # Verificar si el archivo existe
+            if not Path(text).exists():
+                self.log(f"Error: Archivo no encontrado - {self.pot_file_addr}")
+                self.show_message("Error", "El archivo no existe")
+                return
+            
+            self.pot_file_addr = text
+                
+            self.log(f"Selected POT file: {self.pot_file_addr}")
+            self.load_pot_for_review(force_reload=True)
+        except Exception as e:
+            self.log(f"Error al cargar el archivo: {str(e)}")
+            self.show_message("Error", f"No se pudo cargar el archivo: {str(e)}")
     
     def toggle_language(self, lang, active):
         if active:
@@ -77,7 +125,8 @@ class PoTranslatorGUI(TabbedPanel):
         else:
             if lang in self.selected_languages:
                 self.selected_languages.remove(lang)
-        
+                if lang in self.review_data:
+                    del self.review_data[lang]
         self.load_pot_for_review()
     
     def load_pot_for_review(self, force_reload=False):
@@ -85,46 +134,107 @@ class PoTranslatorGUI(TabbedPanel):
             return False
         
         try:
-            selected_langs = self.selected_languages.copy()
-            
-            current_displayed_langs = set(self.review_columns[1:]) if len(self.review_columns) > 1 else set()
-            if not force_reload and set(selected_langs) == current_displayed_langs:
-                return True
-                
             pot_path = Path(self.pot_file_addr)
-            pot_entries = polib.pofile(pot_path)
-            
-            new_columns = ['Main'] + selected_langs
-            self.review_columns = new_columns
-            
-            self.translation_data = {}
-            
-            for lang in selected_langs:
-                if lang not in self.translation_data:
-                    self.translation_data[lang] = {}
-                    
+            if not pot_path.exists():
+                self.log(f"Error: POT file not found at {self.pot_file_addr}")
+                return False
+                
+            # Load POT file entries
+            if force_reload:
+                pot_entries = polib.pofile(str(pot_path))
+                self.review_data['Original'] = {entry.msgid : entry.msgstr for entry in pot_entries if entry.msgid}
+            # Load translations for selected languages
+            for lang in self.selected_languages:
                 po_path = pot_path.parent / f"{lang}.po"
+                
                 if po_path.exists():
-                    po_entries = polib.pofile(po_path)
-                    for entry in po_entries:
-                        if entry.msgid:
-                            self.translation_data[lang][entry.msgid] = entry.msgstr
+                    try:
+                        po_entries = polib.pofile(str(po_path))
+                        translations = {entry.msgid: entry.msgstr for entry in po_entries if entry.msgid}
+                        
+                        # Update the review data with translations
+                        self.review_data[lang] = {}
+                        for msgid,_ in self.review_data['Original'].items():
+                            self.review_data[lang][msgid] = translations.get(msgid, "")
+                    except Exception as e:
+                        self.log(f"Error loading {lang}.po: {str(e)}")
+                        continue
+                else:
+                    # If PO file doesn't exist, initialize with empty strings
+                    self.review_data[lang] = {}
             
-            # Actualizar datos para la tabla
-            new_data = []
-            for entry in pot_entries:
-                if entry.msgid:
-                    row = {'Main': entry.msgid}
-                    for lang in selected_langs:
-                        row[lang] = self.translation_data[lang].get(entry.msgid, "")
-                    new_data.append(row)
             
-            self.review_data = new_data
-            self.log(f"\nUpdated view with languages: {', '.join(selected_langs)}")
+            # Update the UI grid
+            self.update_translation_grid()
+            
+            self.log(f"\nLoaded POT file with {len(self.review_data)} entries")
+            if self.selected_languages:
+                self.log(f"Displaying translations for: {', '.join(self.selected_languages)}")
             return True
+            
         except Exception as e:
             self.log(f"Failed to load POT file: {str(e)}")
             return False
+    
+    def update_translation_column(self, lang, po_file):
+        """Update the translation column for a specific language"""
+        translations = {entry.msgid: entry.msgstr for entry in po_file if entry.msgid}
+        
+        for row in self.review_data:
+            original_msg = row['Original']
+            row[lang] = translations.get(original_msg, "")
+        
+        self.update_translation_grid()
+    
+    def update_translation_grid(self):
+        if 'translation_grid' not in self.ids:
+            return
+            
+        grid = self.ids.translation_grid
+        grid.clear_widgets()
+        
+        # Obtener todas las claves (msgids) de la columna 'Original'
+        msgids = list(self.review_data.get('Original', {}).keys())
+        
+        # Configurar el GridLayout
+        num_columns = len(self.review_data)  # Número de columnas (idiomas + original)
+        num_rows = len(msgids) + 1          # +1 para la fila de encabezados
+        
+        grid.cols = num_columns
+        grid.rows = num_rows
+        
+        # 1. Primero añadir los encabezados de columna
+        for lang in self.review_data.keys():
+            lbl = Label(text=lang, size_hint_y=None, height=40, bold=True)
+            lbl.canvas.before.add(Color(rgba=(0.8, 0.8, 0.8, 1)))
+            lbl.canvas.before.add(Rectangle(pos=lbl.pos, size=lbl.size))
+            grid.add_widget(lbl)
+        
+        # 2. Luego añadir los datos por columnas
+        for msgid in msgids:
+            for lang, column_data in self.review_data.items():
+                if lang == 'Original':
+                    # Celda no editable para el texto original
+                    lbl = Label(text=msgid if msgid else '', 
+                            size_hint_y=None, height=40,
+                            text_size=(None, None), halign='left', valign='middle')
+                    lbl.canvas.before.add(Color(rgba=(0.9, 0.9, 0.9, 1)))
+                    lbl.canvas.before.add(Rectangle(pos=lbl.pos, size=lbl.size))
+                    grid.add_widget(lbl)
+                else:
+                    # Celda editable para las traducciones
+                    txt = EditableCell(text=column_data.get(msgid, ''), 
+                                    size_hint_y=None, height=40)
+                    txt.bind(text=partial(self.on_cell_edit, lang, msgid))
+                    grid.add_widget(txt)
+        
+        # Actualizar altura del GridLayout
+        grid.height = max(grid.minimum_height, 500)
+
+    def on_cell_edit(self, lang, msgid, instance, value):
+        """Actualiza el dato cuando se edita una celda"""
+        if lang in self.review_data and msgid in self.review_data[lang]:
+            self.review_data[lang][msgid] = value
     
     def translate_all_selected(self):
         if self.is_translating:
@@ -169,7 +279,7 @@ class PoTranslatorGUI(TabbedPanel):
                     
                     loop.run_until_complete(coro)
                     
-                    # Actualizar la UI con las nuevas traducciones
+                    # Update the UI with new translations
                     def update_ui():
                         self.update_translation_column(lang, po_file)
                     
@@ -195,59 +305,33 @@ class PoTranslatorGUI(TabbedPanel):
                 
         threading.Thread(target=run_translations, daemon=True).start()
     
-    def update_translation_grid(self):
-        if not hasattr(self, 'translation_grid'):
-            return
-            
-        grid = self.translation_grid
-        grid.clear_widgets()
-        
-        # Add headers
-        for col in self.review_columns:
-            lbl = Label(text=col, size_hint_y=None, height=40, bold=True)
-            lbl.canvas.before.add(Color(rgba=(0.8, 0.8, 0.8, 1)))
-            lbl.canvas.before.add(Rectangle(pos=lbl.pos, size=lbl.size))
-            grid.add_widget(lbl)
-        
-        # Add data rows
-        for row in self.review_data:
-            for col in self.review_columns:
-                if col == 'Main':
-                    lbl = Label(text=row[col] if row[col] else '', 
-                            size_hint_y=None, height=40,
-                            text_size=(None, None), halign='left', valign='middle')
-                    lbl.canvas.before.add(Color(rgba=(0.9, 0.9, 0.9, 1)))
-                    lbl.canvas.before.add(Rectangle(pos=lbl.pos, size=lbl.size))
-                    grid.add_widget(lbl)
-                else:
-                    txt = EditableCell(text=row.get(col, ''), size_hint_y=None, height=40)
-                    txt.bind(text=partial(self.on_cell_edit, row, col))
-                    grid.add_widget(txt)
-
-    def on_cell_edit(self, row, col, instance, value):
-        row[col] = value
-    
     def save_all_translations(self):
         if not self.pot_file_addr:
             self.log("Error: No POT file loaded")
             return
-        if not self.translation_data:
+        if not self.selected_languages:
             self.log("Error: No Language Selected")
             return
         
         pot_path = Path(self.pot_file_addr)
         
-        for lang in self.translation_data:
+        for lang in self.selected_languages:
             try:
+                # Create a new PO file based on the POT file
                 po_file = polib.pofile(str(pot_path))
+                
+                # Update metadata
                 po_file.metadata = PoTranslator._generate_po_metadata(lang, str(pot_path))
                 
-                # Crear diccionario con las traducciones
-                translations = {row['Main']: row.get(lang, "") for row in self.review_data}
+                # Create a dictionary with all translations for this language
+                translations = {row['Original']: row.get(lang, "") for row in self.review_data}
                 
+                # Update each entry in the PO file
                 for entry in po_file:
-                    entry.msgstr = translations.get(entry.msgid, "")
-                    
+                    if entry.msgid in translations:
+                        entry.msgstr = translations[entry.msgid]
+                
+                # Save the PO file
                 po_file_path = pot_path.parent / f"{lang}.po"
                 po_file.save(str(po_file_path))
                 self.log(f"Saved translations to {po_file_path}")
@@ -269,3 +353,5 @@ class PoTranslatorGUI(TabbedPanel):
     
     def log(self, message):
         self.log_messages.append(message)
+        # Auto-scroll to the bottom
+        Clock.schedule_once(lambda dt: setattr(self.ids.log_area, 'cursor', (0, len(self.ids.log_area.text))))
