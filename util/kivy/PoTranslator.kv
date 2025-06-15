@@ -24,6 +24,7 @@
                 spacing: 10
                 
                 BoxLayout:
+                    id: pot_file_box_layout
                     size_hint_y: None
                     height: 50
                     Label:
@@ -33,14 +34,19 @@
                     TextInput:
                         id: pot_file_input
                         text: root.pot_file_addr
-                        on_text: root.handle_pot_file_selection(self.text)
+                        multiline: False
+                        hint_text: "Escribe la ruta o usa el botón Browse"
+                        on_focus: root.handle_pot_file_input(self) if not self.focus else None
+                        background_color: (1, 1, 1, 1)
                     Button:
+                        id: browse_button
                         text: 'Browse'
                         size_hint_x: None
                         width: 100
                         on_press: root.browse_pot_file()
                 
                 BoxLayout:
+                    id: lan_box_layout
                     size_hint_y: None
                     height: 50
                     Label:
@@ -65,6 +71,7 @@
                             lang: 'en'
                 
                 BoxLayout:
+                    id: buttons_box_layout
                     size_hint_y: None
                     height: 50
                     Button:
@@ -79,12 +86,14 @@
                         on_press: root.save_all_translations()
                 
                 ScrollView:
+                    id: table_scroll
                     GridLayout:
                         id: translation_grid
                         size_hint_y: None
                         spacing: 2
                         padding: 5
     TabbedPanelItem:
+        id: tab_settings
         text: 'Settings'
         ScrollView:
             BoxLayout:

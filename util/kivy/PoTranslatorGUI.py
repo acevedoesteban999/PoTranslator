@@ -54,13 +54,22 @@ class PoTranslatorGUI(TabbedPanel):
     selected_languages = ListProperty([])
     translation_data = ObjectProperty({})
     review_data = ObjectProperty({})
+    ui_enable = BooleanProperty(False)
     
     def __init__(self, **kwargs):
         super(PoTranslatorGUI, self).__init__(**kwargs)
         self.selected_languages = []
         self.translation_data = {}
         self.review_data = {'Original':{}}
-        
+        self.set_ui_state(False)
+    
+    def set_ui_state(self, enabled):
+        """Habilita o deshabilita toda la UI excepto el campo de búsqueda"""
+        self.ui_enable = enabled
+        for child_name,child in self.ids.items():
+            if child_name not in ['pot_file_box_layout','pot_file_input', 'browse_button']:
+                child.disabled = not enabled
+    
     def browse_pot_file(self):
         content = BoxLayout(orientation='vertical')
         file_chooser = FileChooserListView(filters=['*.pot'])
@@ -80,43 +89,47 @@ class PoTranslatorGUI(TabbedPanel):
             
         def select_file(instance):
             if file_chooser.selection:
-                self.pot_file_addr = file_chooser.selection[0]
-                self.ids.pot_file_input.text = self.pot_file_addr
-                self.handle_pot_file_selection(self.pot_file_addr)
+                selected_file = file_chooser.selection[0]
+                self.ids.pot_file_input.text = selected_file  # Actualiza el TextInput
+                self._validate_and_load_file(selected_file)
             popup.dismiss()
             
         btn_cancel.bind(on_press=dismiss_popup)
         btn_select.bind(on_press=select_file)
         popup.open()
-        
-    def handle_pot_file_selection(self, text:str=None):
-        """Función común para manejar la selección del archivo POT"""
-        # Si se pasa el texto como parámetro (desde TextInput), actualizamos pot_file_addr
-        
-        if not text:
+
+    def handle_pot_file_input(self, instance):
+        file_path = instance.text
+        self._validate_and_load_file(file_path)
+
+    def _validate_and_load_file(self, file_path: str):
+        if not file_path:
             return
+        self.set_ui_state(False)
         
-        # Validación de extensión .pot
-        if not text.lower().endswith('.pot'):
+        if not file_path.lower().endswith('.pot'):
             self.log("Error: El archivo debe tener extensión .pot")
             self.show_message("Error", "Por favor selecciona un archivo .pot válido")
             return
         
-        
         try:
             # Verificar si el archivo existe
-            if not Path(text).exists():
-                self.log(f"Error: Archivo no encontrado - {self.pot_file_addr}")
+            if not Path(file_path).exists():
+                self.log(f"Error: Archivo no encontrado - {file_path}")
                 self.show_message("Error", "El archivo no existe")
                 return
             
-            self.pot_file_addr = text
-                
-            self.log(f"Selected POT file: {self.pot_file_addr}")
+            # Actualizar la propiedad
+            self.pot_file_addr = file_path
+            
+            self.log(f"Archivo POT cargado: {self.pot_file_addr}")
             self.load_pot_for_review(force_reload=True)
+            self.set_ui_state(True)
+    
         except Exception as e:
             self.log(f"Error al cargar el archivo: {str(e)}")
             self.show_message("Error", f"No se pudo cargar el archivo: {str(e)}")
+        
     
     def toggle_language(self, lang, active):
         if active:
