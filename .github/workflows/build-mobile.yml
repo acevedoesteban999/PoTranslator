@@ -34,6 +34,7 @@ jobs:
             libsqlite3-dev \
             libreadline-dev \
             libffi-dev \
+            libtool \
             wget \
             unzip
             
