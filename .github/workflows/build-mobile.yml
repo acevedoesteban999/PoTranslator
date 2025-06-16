@@ -1,4 +1,4 @@
-name: Build and Release Mobile
+name: Build and Release PoTranslator APK
 on:
   push:
     tags: ['v*']
@@ -20,19 +20,18 @@ jobs:
           sudo apt-get install -y \
             git zip unzip python3-pip autoconf libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo6 cmake libffi-dev libssl-dev cython3 \
-            openjdk-11-jdk
+            libtinfo6 cmake libffi-dev libssl-dev \
+            openjdk-11-jdk curl
 
       - name: Set Java 11 as default
         run: |
           sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
           echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
 
-      - name: Setup Android SDK
+      - name: Install Android SDK
         run: |
-          # Descargar y extraer Command Line Tools correctamente
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          mkdir -p android-sdk/cmdline-tools
+          mkdir -p android-sdk
           unzip cmdline-tools.zip -d android-sdk/cmdline-tools
           mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
           rm cmdline-tools.zip
@@ -40,8 +39,6 @@ jobs:
           echo "ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/android-sdk" >> $GITHUB_ENV
           echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
-      - name: Accept licenses and install Android tools
-        run: |
           yes | $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk --licenses
           $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk \
             "platform-tools" \
@@ -51,38 +48,40 @@ jobs:
 
           echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/platform-tools:$GITHUB_WORKSPACE/android-sdk/build-tools/33.0.0" >> $GITHUB_ENV
 
-      - name: Install Buildozer
+      - name: Install python-for-android
         run: |
-          pip install buildozer cython==0.29.33
+          pip install --upgrade pip
+          pip install python-for-android
 
-      - name: Configure Buildozer
+      - name: Verify main file exists
         run: |
-          if [ ! -f buildozer.spec ]; then
-            buildozer init
+          if [ ! -f PoTranslatorApp.py ]; then
+            echo "Error: El archivo principal PoTranslatorApp.py no existe!"
+            exit 1
           fi
-          echo "[app]" > buildozer.spec
-          echo "title = MyApp" >> buildozer.spec
-          echo "package.name = myapp" >> buildozer.spec
-          echo "package.domain = org.test" >> buildozer.spec
-          echo "source.dir = ." >> buildozer.spec
-          echo "source.include_exts = py,png,jpg,kv,atlas" >> buildozer.spec
-          echo "version = 1.0" >> buildozer.spec
-          echo "requirements = python3,kivy" >> buildozer.spec
-          echo "android.permissions = INTERNET" >> buildozer.spec
-          echo "android.sdk_path = $GITHUB_WORKSPACE/android-sdk" >> buildozer.spec
-          echo "android.ndk_path = $GITHUB_WORKSPACE/android-sdk/ndk/25.2.9519653" >> buildozer.spec
-          echo "android.accept_sdk_license = True" >> buildozer.spec
-          echo "android.skip_update = True" >> buildozer.spec
 
-      - name: Build APK
+      - name: Build APK with p4a
         run: |
-          buildozer -v android release
+          p4a apk --requirements=python3,kivy \
+                 --android-api=33 \
+                 --ndk-version=25.2.9519653 \
+                 --sdk-dir=$GITHUB_WORKSPACE/android-sdk \
+                 --ndk-dir=$GITHUB_WORKSPACE/android-sdk/ndk/25.2.9519653 \
+                 --dist-name=PoTranslator \
+                 --package=org.test.potranslator \
+                 --name=PoTranslator \
+                 --version=1.0.0 \
+                 --bootstrap=sdl2 \
+                 --orientation=portrait \
+                 --permission=INTERNET \
+                 --private=$GITHUB_WORKSPACE \
+                 --main=PoTranslatorApp
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Android-APK
-          path: bin/*.apk
+          name: PoTranslator-APK
+          path: dist/PoTranslator/bin/PoTranslator-*.apk
 
   release:
     needs: build-apk
@@ -91,7 +90,7 @@ jobs:
       - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: Android-APK
+          name: PoTranslator-APK
           path: ./release
 
       - name: Create Release
