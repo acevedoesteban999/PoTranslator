@@ -1,114 +1,64 @@
-name: Build and Release PoTranslator APK
+name: Build Kivy APK
+
 on:
   push:
-    branches:
-      - Kivy
+    branches: [ Kivy ]  # Cambia esto según tu rama principal
+  workflow_dispatch:    # Permite ejecuciones manuales
 
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            git zip unzip python3-pip autoconf automake libtool \
-            pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo6 cmake libffi-dev libssl-dev \
-            openjdk-11-jdk curl make gcc g++ \
-            libtool-bin patchelf
-
-          pip install --upgrade pip setuptools wheel
-
-      - name: Set Java 11 as default
-        run: |
-          sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
-          echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
-
-      - name: Setup Android SDK and NDK
-        run: |
-          # Install Android SDK
-          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          mkdir -p android-sdk
-          unzip cmdline-tools.zip -d android-sdk/cmdline-tools
-          mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
-          rm cmdline-tools.zip
-
-          # Set environment variables
-          echo "ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
-
-          # Accept licenses and install components
-          yes | $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk --licenses
-          $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;33.0.0" \
-            "ndk;25.2.9519653"
-
-          echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/platform-tools:$GITHUB_WORKSPACE/android-sdk/build-tools/33.0.0" >> $GITHUB_ENV
-          echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-sdk/ndk/25.2.9519653" >> $GITHUB_ENV
-
-      - name: Install build tools
-        run: |
-          pip install cython==0.29.33
-          pip install python-for-android
-
-      - name: Build APK
-        run: |
-          # Clean previous builds
-          rm -rf .buildozer || true
-          
-          # Set required environment variables
-          export NDK_VERSION=25.2.9519653
-          export ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-sdk/ndk/$NDK_VERSION
-          export CFLAGS="-Wno-error=implicit-function-declaration"
-          
-          # Build APK
-          p4a apk \
-            --requirements=python3,kivy \
-            --android-api=33 \
-            --ndk-dir=$ANDROID_NDK_HOME \
-            --sdk-dir=$GITHUB_WORKSPACE/android-sdk \
-            --dist-name=PoTranslator \
-            --package=org.test.potranslator \
-            --name=PoTranslator \
-            --version=1.0.0 \
-            --bootstrap=sdl2 \
-            --private=$GITHUB_WORKSPACE \
-            --main=PoTranslatorApp \
-            --arch=arm64-v8a \
-            --permission=INTERNET \
-            --orientation=portrait \
-            --window \
-            --debug
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: PoTranslator-APK
-          path: dist/PoTranslator/bin/PoTranslator-*.apk
-
-  release:
-    needs: build-apk
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download APK artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: PoTranslator-APK
-          path: ./release
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./release/*.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            python3 \
+            python3-dev \
+            ffmpeg \
+            libsdl2-dev \
+            libsdl2-image-dev \
+            libsdl2-mixer-dev \
+            libsdl2-ttf-dev \
+            libportmidi-dev \
+            libswscale-dev \
+            libavformat-dev \
+            libavcodec-dev \
+            zlib1g-dev
+        
+        pip install --upgrade pip virtualenv
+        
+    - name: Set up Buildozer
+      run: |
+        pip install --user --upgrade buildozer cython
+        export PATH=$PATH:~/.local/bin/
+        
+    - name: Initialize Buildozer
+      run: |
+        buildozer init
+        # Modifica el archivo buildozer.spec según sea necesario
+        # Aquí puedes automatizar cambios al archivo buildozer.spec si lo necesitas
+        sed -i 's/#android.release_artifact = bin/.*/android.release_artifact = bin\/.*/' buildozer.spec
+        
+    - name: Build APK
+      run: |
+        export PATH=$PATH:~/.local/bin/
+        buildozer -v android release
+        
+    - name: Upload APK artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: kivy-app
+        path: bin/*.apk
