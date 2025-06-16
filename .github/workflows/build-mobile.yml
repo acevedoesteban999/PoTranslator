@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -17,52 +16,26 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.8'
+        python-version: '3.10'
 
-    - name: Install system dependencies
+    - name: Install Buildozer and dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          git \
-          zip \
-          unzip \
-          openjdk-11-jdk \
-          python3-pip \
-          autoconf \
-          libtool \
-          pkg-config \
-          zlib1g-dev \
-          libncurses5-dev \
-          libncursesw5-dev \
-          libtinfo5 \
-          cmake \
-          libffi-dev \
-          libssl-dev
+        sudo apt update
+        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+        pip install buildozer
 
-    - name: Install Buildozer
+    - name: Run Buildozer
       run: |
-        pip install --user --upgrade buildozer
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        buildozer -v android debug
 
-    - name: Set up Buildozer
-      run: |
-        buildozer init
-        # Opcional: Modifica tu buildozer.spec aquí si es necesario
-        # sed -i 's/#android.release_artifact = .*/android.release_artifact = apk/' buildozer.spec
-
-    - name: Build APK
-      run: |
-        buildozer -v android release
-
-    - name: Upload APK artifact
+    - name: Upload APK as Release Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: app-release
+        name: mi-app-debug.apk
         path: bin/*.apk
 
-    # Opcional: Crear un release con el APK
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
       with:
         files: bin/*.apk
