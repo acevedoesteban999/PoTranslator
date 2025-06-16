@@ -1,4 +1,4 @@
-name: Build and Release Kivy App
+name: Build and Release Android APK
 on:
   push:
     tags: ['v*']
@@ -20,30 +20,51 @@ jobs:
           sudo apt-get install -y \
             git zip unzip openjdk-17-jdk python3-pip autoconf libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo6 cmake libffi-dev libssl-dev cython3
+            libtinfo6 cmake libffi-dev libssl-dev cython3 \
+            aidl
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          ndk-version: '25.2.9519653'
 
-      - name: Install Android platforms and tools
+      - name: Install Android tools
         run: |
-          yes | sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.0"
-          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "PATH=$PATH:$ANDROID_HOME/platform-tools" >> $GITHUB_ENV
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;33.0.0" \
+            "cmdline-tools;latest"
+          
+          echo "PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/build-tools/33.0.0" >> $GITHUB_ENV
+
+      - name: Verify Android tools
+        run: |
+          which aidl || find $ANDROID_HOME -name aidl
+          echo "AIDL_PATH=$(find $ANDROID_HOME -name aidl | head -n 1)" >> $GITHUB_ENV
+          echo "PATH=$PATH:$(dirname $(find $ANDROID_HOME -name aidl | head -n 1))" >> $GITHUB_ENV
 
       - name: Install Buildozer
-        run: pip install buildozer
+        run: |
+          pip install buildozer cython==0.29.33
 
       - name: Configure Buildozer
         run: |
           if [ ! -f buildozer.spec ]; then
             buildozer init
           fi
-          echo "requirements = python3, kivy" >> buildozer.spec
+          echo "[app]" > buildozer.spec
+          echo "title = MyApp" >> buildozer.spec
+          echo "package.name = myapp" >> buildozer.spec
+          echo "package.domain = org.test" >> buildozer.spec
+          echo "source.dir = ." >> buildozer.spec
+          echo "source.include_exts = py,png,jpg,kv,atlas" >> buildozer.spec
+          echo "version = 1.0" >> buildozer.spec
+          echo "requirements = python3,kivy" >> buildozer.spec
           echo "android.permissions = INTERNET" >> buildozer.spec
           echo "android.sdk_path = $ANDROID_HOME" >> buildozer.spec
           echo "android.ndk_path = $ANDROID_HOME/ndk/25.2.9519653" >> buildozer.spec
+          echo "android.accept_sdk_license = True" >> buildozer.spec
 
       - name: Build APK
         run: |
@@ -52,50 +73,22 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: App-Artifacts
+          name: Android-APK
           path: bin/*.apk
 
-  build-windows:
-    runs-on: windows-latest
-    needs: build-apk
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install Kivy and PyInstaller
-        run: |
-          python -m pip install --upgrade pip
-          pip install kivy pyinstaller
-
-      - name: Build Windows executable
-        run: |
-          pyinstaller --onefile --windowed --name MyApp main.py
-
-      - name: Upload EXE artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: App-Artifacts
-          path: dist/*.exe
-
   release:
-    needs: [build-apk, build-windows]
+    needs: build-apk
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download APK artifact
         uses: actions/download-artifact@v4
         with:
-          name: App-Artifacts
+          name: Android-APK
           path: ./release
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            ./release/*.apk
-            ./release/*.exe
+          files: ./release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
