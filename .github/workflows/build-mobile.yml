@@ -1,5 +1,5 @@
 name: Build and Release PoTranslator APK
-on:
+push:
   branches:
     - kivy
 
