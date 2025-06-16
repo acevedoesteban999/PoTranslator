@@ -12,7 +12,7 @@
 PoTranslator GUI is a user-friendly application for translating and managing .pot/.po files. It allows you to translate text strings into multiple languages, review translations, and save them back to .po files.
 
 ![Translator Graphical Interface](media/image1.png)
-
+*Kivy-based interface with responsive design*
 ## Getting Started
 
 1. **Launch the Application**

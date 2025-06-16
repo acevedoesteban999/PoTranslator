@@ -1,0 +1,60 @@
+name: Build and Release APK
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest  
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Buildozer and dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          pip install buildozer
+
+      - name: Generate Buildozer spec (if not exists)
+        run: |
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
+
+      - name: Configure Buildozer (requirements)
+        run: |
+          echo "requirements = python3, kivy" >> buildozer.spec  # Añade tus dependencias
+          echo "android.permissions = INTERNET" >> buildozer.spec  # Permisos opcionales
+
+      - name: Build APK
+        run: |
+          buildozer -v android release  # Compila en modo release (firmado)
+          # Alternativa para debug: buildozer -v android debug
+
+      - name: Upload APK as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PoTranslator-APK
+          path: bin/*.apk 
+
+  release:
+    needs: build-apk
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: PoTranslator-APK
+          path: ./apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./apk/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
