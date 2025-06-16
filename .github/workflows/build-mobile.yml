@@ -21,7 +21,7 @@ jobs:
             git zip unzip python3-pip autoconf libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
             libtinfo6 cmake libffi-dev libssl-dev cython3 \
-            openjdk-11-jdk  # Usamos Java 11 que es compatible
+            openjdk-11-jdk
 
       - name: Set Java 11 as default
         run: |
@@ -30,11 +30,11 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          # Descargar command line tools directamente
+          # Descargar y extraer Command Line Tools correctamente
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          unzip cmdline-tools.zip -d cmdline-tools
-          mkdir -p android-sdk/cmdline-tools/latest
-          mv cmdline-tools/* android-sdk/cmdline-tools/latest/
+          mkdir -p android-sdk/cmdline-tools
+          unzip cmdline-tools.zip -d android-sdk/cmdline-tools
+          mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
           rm cmdline-tools.zip
 
           echo "ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/android-sdk" >> $GITHUB_ENV
