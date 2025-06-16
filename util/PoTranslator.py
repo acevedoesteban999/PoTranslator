@@ -142,41 +142,43 @@ class PoTranslator:
             restored_texts.append(text)
         return restored_texts
     
-    def _restore_html(self, translated_texts:list, all_html:list) -> List[str]:
+    def _restore_html(self, translated_texts: list, all_html: list) -> List[str]:
         restored_texts = []
         
-        def process_node(node,texts:list[str]):
-            nonlocal node
+        def process_node(node, texts: list[str]):
             if isinstance(node, NavigableString):
                 stripped_text = node.strip()
                 if stripped_text:
-                    node = node.replace(node.text,texts.pop(0)).replace(" __h__","").replace(" __H__","")
+                    new_text = texts.pop(0).replace(" __h__", "").replace(" __H__", "")
+                    node.replace_with(new_text)
                 return
             for child in node.children:
-                process_node(child,texts)
-                
-                
+                process_node(child, texts)
+        
         translated_iter = iter(translated_texts)
         
         for text in translated_iter:
-            text:str
             try:
                 if text.endswith("__H__") or text.endswith("__h__"):
-                    html , count = all_html.pop(0)
+                    html, count = all_html.pop(0)
                     
                     soup = BeautifulSoup(html, 'html.parser')
                     texts = [text]
                     if count > 1:
-                        texts += [next(translated_iter,None) for _ in range(count-1)]
-                
+                        texts += [next(translated_iter) for _ in range(count-1)]
+                    
                     for node in soup.contents:
-                        process_node(node,texts)
-                    restored_texts.append(str(child))
+                        process_node(node, texts)
+                    restored_texts.append(str(soup))
                 else:
                     restored_texts.append(text)
             except Exception as e:
-                pass
+                restored_texts.append(text)  # Añadir el texto original si hay error
+                continue
+        
         return restored_texts
+
+    
 
     async def _translate_batch(self, texts: List[str], dest_lang: str ,pot_file_addr:str) -> List[str]:
         """
