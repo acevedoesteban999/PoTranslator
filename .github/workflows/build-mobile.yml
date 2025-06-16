@@ -29,7 +29,7 @@ jobs:
       - name: Configure Buildozer (requirements)
         run: |
           echo "requirements = python3, kivy" >> buildozer.spec  
-          echo "android.permissions = INTERNET" >> buildozer.spec  #
+          echo "android.permissions = INTERNET" >> buildozer.spec 
 
       - name: Build APK
         run: |
