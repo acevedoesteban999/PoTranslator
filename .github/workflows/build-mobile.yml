@@ -1,4 +1,4 @@
-name: Build APK with Buildozer
+name: Build and Release APK
 
 on:
   push:
@@ -6,36 +6,80 @@ on:
       - 'v*' 
     branches:
       - workflow
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
-
+      uses: actions/checkout@v3
+      
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.10'
-
-    - name: Install Buildozer and dependencies
+        python-version: '3.8'
+        
+    - name: Install dependencies
       run: |
-        sudo apt update
-        sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-        pip install buildozer
-
-    - name: Run Buildozer
+        sudo apt-get update
+        sudo apt-get install -y \
+            python3-pip \
+            openjdk-11-jdk \
+            zlib1g-dev \
+            libncurses5-dev \
+            libgdbm-dev \
+            libnss3-dev \
+            libssl-dev \
+            libsqlite3-dev \
+            libreadline-dev \
+            libffi-dev \
+            wget \
+            unzip
+            
+        pip install --upgrade pip virtualenv
+        
+    - name: Install python-for-android
       run: |
-        buildozer -v android debug
-
-    - name: Upload APK as Release Artifact
+        pip install python-for-android
+        
+    - name: Set up Android SDK
+      run: |
+        mkdir -p ~/android-sdk
+        cd ~/android-sdk
+        wget https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip
+        unzip commandlinetools-linux-6858069_latest.zip
+        mkdir cmdline-tools
+        mv tools cmdline-tools/latest
+        export ANDROID_SDK_ROOT=~/android-sdk
+        echo "ANDROID_SDK_ROOT=~/android-sdk" >> $GITHUB_ENV
+        
+        yes | ~/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+        ~/android-sdk/cmdline-tools/latest/bin/sdkmanager "platform-tools" "platforms;android-29" "build-tools;30.0.3"
+        
+    - name: Build APK
+      run: |
+        export PATH=$PATH:~/android-sdk/platform-tools
+        p4a apk --private ${{ github.workspace }} \
+            --package=com.acevedoesteban.potranslator \
+            --name "PoTranslatorApp" \
+            --version 4.0.0 \
+            --bootstrap=sdl2 \
+            --requirements=python3,kivy \
+            --orientation=portrait \
+            --permission=INTERNET \
+            --dist-name=myapp \
+            --arch=armeabi-v7a
+        
+    - name: Upload APK artifact
       uses: actions/upload-artifact@v4
       with:
-        name: mi-app-debug.apk
-        path: bin/*.apk
-
-    - name: Create GitHub Release
+        name: app-release
+        path: ~/.local/share/python-for-android/dists/myapp/build/outputs/apk/debug/*.apk
+        
+    - name: Create Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: bin/*.apk
+        files: ~/.local/share/python-for-android/dists/myapp/build/outputs/apk/debug/*.apk
+        body: "Release v4 - APK built with python-for-android"

@@ -6,7 +6,7 @@ a = Analysis(
     pathex=['.'],
     binaries=[],
     datas=[
-        ('util/kivy/PoTranslator.kv', 'util/kivy/'),
+        ('util/kivy/PoTranslator.kv', 'util/kivy'),
     ],
     hiddenimports=[],
     hookspath=[],
