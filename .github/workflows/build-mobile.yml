@@ -1,7 +1,7 @@
 name: Build and Release PoTranslator APK
 on:
-  push:
-    tags: ['v*']
+  branches:
+    - kivy
 
 jobs:
   build-apk:
