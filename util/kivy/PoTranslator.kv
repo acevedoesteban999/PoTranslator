@@ -1,0 +1,127 @@
+<LanguageCheckBox@BoxLayout>:
+    lang: ''
+    CheckBox:
+        size_hint_x: None
+        width: 30
+        on_active: app.root.toggle_language(root.lang, self.active)
+    Label:
+        text: root.lang.upper() if root.lang else ''
+        size_hint_x: None
+        width: 50
+
+
+<PoTranslatorGUI>:
+    do_default_tab: False
+    tab_pos: 'top_mid'
+    tab_width: 200
+    
+    TabbedPanelItem:
+        text: 'Review & Edit'
+        ScrollView:
+            BoxLayout:
+                orientation: 'vertical'
+                padding: 10
+                spacing: 10
+                
+                BoxLayout:
+                    id: pot_file_box_layout
+                    size_hint_y: None
+                    height: 50
+                    Label:
+                        text: '.POT File:'
+                        size_hint_x: None
+                        width: 100
+                    TextInput:
+                        id: pot_file_input
+                        text: root.pot_file_addr
+                        multiline: False
+                        hint_text: "Escribe la ruta o usa el botón Browse"
+                        on_focus: root.handle_pot_file_input(self) if not self.focus else None
+                        background_color: (1, 1, 1, 1)
+                    Button:
+                        id: browse_button
+                        text: 'Browse'
+                        size_hint_x: None
+                        width: 100
+                        on_press: root.browse_pot_file()
+                
+                BoxLayout:
+                    id: lan_box_layout
+                    size_hint_y: None
+                    height: 50
+                    Label:
+                        text: 'Target Languages:'
+                        size_hint_x: None
+                        width: 120
+                    GridLayout:
+                        cols: 6
+                        spacing: 10
+                        padding: 5
+                        LanguageCheckBox:
+                            lang: 'es'
+                        LanguageCheckBox:
+                            lang: 'pt'
+                        LanguageCheckBox:
+                            lang: 'fr'
+                        LanguageCheckBox:
+                            lang: 'it'
+                        LanguageCheckBox:
+                            lang: 'de'
+                        LanguageCheckBox:
+                            lang: 'en'
+                
+                BoxLayout:
+                    id: buttons_box_layout
+                    size_hint_y: None
+                    height: 50
+                    Button:
+                        text: 'Reload Data'
+                        on_press: root.load_pot_for_review(force_reload=True)
+                    Button:
+                        text: 'Translate All'
+                        disabled: root.is_translating
+                        on_press: root.translate_all_selected()
+                    Button:
+                        text: 'Save'
+                        on_press: root.save_all_translations()
+                
+                ScrollView:
+                    id: table_scroll
+                    GridLayout:
+                        id: translation_grid
+                        size_hint_y: None
+                        spacing: 2
+                        padding: 5
+    # TabbedPanelItem:
+    #     id: tab_settings
+    #     text: 'Settings'
+    #     ScrollView:
+    #         BoxLayout:
+    #             orientation: 'vertical'
+    #             padding: 10
+    #             spacing: 10
+    #             size_hint_y: None
+    #             height: max(self.minimum_height, root.height)
+                
+    #             BoxLayout:
+    #                 size_hint_y: None
+    #                 height: 50
+    #                 Label:
+    #                     text: 'Batch size:'
+    #                     size_hint_x: None
+    #                     width: 100
+    #                 TextInput:
+    #                     text: str(root.batch_size)
+    #                     input_filter: 'int'
+    #                     on_text: root.batch_size = int(self.text) if self.text.isdigit() else root.batch_size
+                
+    #             BoxLayout:
+    #                 size_hint_y: None
+    #                 height: 50
+    #                 CheckBox:
+    #                     active: root.output_in_source_dir
+    #                     on_active: root.output_in_source_dir = self.active
+    #                 Label:
+    #                     text: 'Save files in the POT file directory'
+                
+                
