@@ -28,12 +28,12 @@ jobs:
 
       - name: Configure Buildozer (requirements)
         run: |
-          echo "requirements = python3, kivy" >> buildozer.spec  # Añade tus dependencias
-          echo "android.permissions = INTERNET" >> buildozer.spec  # Permisos opcionales
+          echo "requirements = python3, kivy" >> buildozer.spec  
+          echo "android.permissions = INTERNET" >> buildozer.spec  #
 
       - name: Build APK
         run: |
-          buildozer -v android release  # Compila en modo release (firmado)
+          buildozer -v android release 
           # Alternativa para debug: buildozer -v android debug
 
       - name: Upload APK as artifact

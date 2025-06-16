@@ -22,13 +22,13 @@ jobs:
         run: |
           # Renombrar el ejecutable según OS
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            pyinstaller --onefile --windowed --name PoTranslator-Windows PoTranslatorGUI.py
+            pyinstaller --onefile --windowed --name PoTranslator-Windows PoTranslatorApp.py
             mv dist/PoTranslator-Windows.exe dist/PoTranslator-${{ github.ref_name }}-Windows.exe
           elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-            pyinstaller --onefile --windowed --name PoTranslator-Mac PoTranslatorGUI.py
+            pyinstaller --onefile --windowed --name PoTranslator-Mac PoTranslatorApp.py
             mv dist/PoTranslator-Mac dist/PoTranslator-${{ github.ref_name }}-Mac
           else
-            pyinstaller --onefile --windowed --name PoTranslator-Linux PoTranslatorGUI.py
+            pyinstaller --onefile --windowed --name PoTranslator-Linux PoTranslatorApp.py
             mv dist/PoTranslator-Linux dist/PoTranslator-${{ github.ref_name }}-Linux
           fi
       - name: Upload artifact
