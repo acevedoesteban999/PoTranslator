@@ -30,28 +30,34 @@ jobs:
 
       - name: Setup Android SDK
         run: |
-          # Descargar y extraer Command Line Tools correctamente
+          # Descargar Command Line Tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
-          mkdir -p android-sdk/cmdline-tools
+          mkdir -p android-sdk
           unzip cmdline-tools.zip -d android-sdk/cmdline-tools
           mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
           rm cmdline-tools.zip
 
+          # Configurar variables de entorno
           echo "ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/android-sdk" >> $GITHUB_ENV
           echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
-      - name: Accept licenses and install Android tools
+          # Crear enlace simbólico para compatibilidad con Buildozer
+          mkdir -p $GITHUB_WORKSPACE/android-sdk/tools/bin
+          ln -s $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager $GITHUB_WORKSPACE/android-sdk/tools/bin/sdkmanager
+
+      - name: Install Android tools
         run: |
           yes | $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk --licenses
           $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk \
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;33.0.0" \
-            "ndk;25.2.9519653"
+            "ndk;25.2.9519653" \
+            "tools"  # Instalar herramientas adicionales
 
           echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/platform-tools:$GITHUB_WORKSPACE/android-sdk/build-tools/33.0.0" >> $GITHUB_ENV
 
-      - name: Install Buildozer
+      - name: Install Buildozer and dependencies
         run: |
           pip install buildozer cython==0.29.33
 
@@ -72,7 +78,7 @@ jobs:
           echo "android.sdk_path = $GITHUB_WORKSPACE/android-sdk" >> buildozer.spec
           echo "android.ndk_path = $GITHUB_WORKSPACE/android-sdk/ndk/25.2.9519653" >> buildozer.spec
           echo "android.accept_sdk_license = True" >> buildozer.spec
-          echo "android.skip_update = True" >> buildozer.spec
+          echo "android.skip_update = False" >> buildozer.spec  # Permitir actualizaciones
 
       - name: Build APK
         run: |
