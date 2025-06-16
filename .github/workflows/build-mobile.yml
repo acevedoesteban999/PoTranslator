@@ -1,47 +1,55 @@
-name: Build and Release
+name: Build and Release Kivy App
 on:
   push:
     tags: ['v*']
 
 jobs:
   build-apk:
-    runs-on: ubuntu-latest  
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install Buildozer and dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             git zip unzip openjdk-17-jdk python3-pip autoconf libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
             libtinfo6 cmake libffi-dev libssl-dev cython3
-          sudo apt-get install -y android-sdk android-sdk-platform-33
-          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
-          echo "PATH=$PATH:/usr/lib/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
-          pip install buildozer
 
-      - name: Generate Buildozer spec (if not exists)
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platforms and tools
+        run: |
+          yes | sdkmanager --install "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+          echo "ANDROID_HOME=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "PATH=$PATH:$ANDROID_HOME/platform-tools" >> $GITHUB_ENV
+
+      - name: Install Buildozer
+        run: pip install buildozer
+
+      - name: Configure Buildozer
         run: |
           if [ ! -f buildozer.spec ]; then
             buildozer init
           fi
-
-      - name: Configure Buildozer
-        run: |
-          echo "requirements = python3, kivy" >> buildozer.spec  
-          echo "android.permissions = INTERNET" >> buildozer.spec 
+          echo "requirements = python3, kivy" >> buildozer.spec
+          echo "android.permissions = INTERNET" >> buildozer.spec
+          echo "android.sdk_path = $ANDROID_HOME" >> buildozer.spec
+          echo "android.ndk_path = $ANDROID_HOME/ndk/25.2.9519653" >> buildozer.spec
 
       - name: Build APK
         run: |
           buildozer -v android release
 
-      - name: Upload APK as artifact
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: App-Artifacts
@@ -53,21 +61,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install Kivy and PyInstaller
         run: |
           python -m pip install --upgrade pip
           pip install kivy pyinstaller
 
-      - name: Create executable
+      - name: Build Windows executable
         run: |
           pyinstaller --onefile --windowed --name MyApp main.py
 
-      - name: Upload EXE as artifact
+      - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
           name: App-Artifacts
@@ -77,13 +85,13 @@ jobs:
     needs: [build-apk, build-windows]
     runs-on: ubuntu-latest
     steps:
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           name: App-Artifacts
           path: ./release
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
