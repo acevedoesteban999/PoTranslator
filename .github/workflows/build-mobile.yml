@@ -1,7 +1,7 @@
 name: Build and Release PoTranslator APK
 on:
   push:
-    beaches:
+    branches:
       - Kivy
 
 jobs:
@@ -19,66 +19,76 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip python3-pip autoconf libtool \
+            git zip unzip python3-pip autoconf automake libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
             libtinfo6 cmake libffi-dev libssl-dev \
-            openjdk-11-jdk curl
+            openjdk-11-jdk curl make gcc g++ \
+            libtool-bin patchelf
+
+          pip install --upgrade pip setuptools wheel
 
       - name: Set Java 11 as default
         run: |
           sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
           echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
 
-      - name: Install Android SDK
+      - name: Setup Android SDK and NDK
         run: |
+          # Install Android SDK
           wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
           mkdir -p android-sdk
           unzip cmdline-tools.zip -d android-sdk/cmdline-tools
           mv android-sdk/cmdline-tools/cmdline-tools android-sdk/cmdline-tools/latest
           rm cmdline-tools.zip
 
-          # Configurar variables de entorno
+          # Set environment variables
           echo "ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/android-sdk" >> $GITHUB_ENV
           echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
 
+          # Accept licenses and install components
           yes | $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk --licenses
           $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk \
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;33.0.0" \
-            "ndk;25.2.9519653" \
-            "tools"  # Instalar herramientas adicionales
+            "ndk;25.2.9519653"
 
           echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/platform-tools:$GITHUB_WORKSPACE/android-sdk/build-tools/33.0.0" >> $GITHUB_ENV
+          echo "ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-sdk/ndk/25.2.9519653" >> $GITHUB_ENV
 
-      - name: Install python-for-android
+      - name: Install build tools
         run: |
-          pip install --upgrade pip
+          pip install cython==0.29.33
           pip install python-for-android
 
-      - name: Verify main file exists
+      - name: Build APK
         run: |
-          if [ ! -f PoTranslatorApp.py ]; then
-            echo "Error: El archivo principal PoTranslatorApp.py no existe!"
-            exit 1
-          fi
-
-      - name: Build APK with p4a
-        run: |
-          p4a apk --requirements=python3,kivy \
-                 --android-api=33 \
-                 --sdk-dir=$GITHUB_WORKSPACE/android-sdk \
-                 --ndk-dir=$GITHUB_WORKSPACE/android-sdk/ndk/25.2.9519653 \
-                 --dist-name=PoTranslator \
-                 --package=org.test.potranslator \
-                 --name=PoTranslator \
-                 --version=1.0.0 \
-                 --bootstrap=sdl2 \
-                 --orientation=portrait \
-                 --permission=INTERNET \
-                 --private=$GITHUB_WORKSPACE \
-                 --main=PoTranslatorApp \
-                 --arch=arm64-v8a  # Especificamos arquitectura ARM64
+          # Clean previous builds
+          rm -rf .buildozer || true
+          
+          # Set required environment variables
+          export NDK_VERSION=25.2.9519653
+          export ANDROID_NDK_HOME=$GITHUB_WORKSPACE/android-sdk/ndk/$NDK_VERSION
+          export CFLAGS="-Wno-error=implicit-function-declaration"
+          
+          # Build APK
+          p4a apk \
+            --requirements=python3,kivy \
+            --android-api=33 \
+            --ndk-dir=$ANDROID_NDK_HOME \
+            --sdk-dir=$GITHUB_WORKSPACE/android-sdk \
+            --dist-name=PoTranslator \
+            --package=org.test.potranslator \
+            --name=PoTranslator \
+            --version=1.0.0 \
+            --bootstrap=sdl2 \
+            --private=$GITHUB_WORKSPACE \
+            --main=PoTranslatorApp \
+            --arch=arm64-v8a \
+            --permission=INTERNET \
+            --orientation=portrait \
+            --window \
+            --debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
