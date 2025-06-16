@@ -1,4 +1,4 @@
-name: Build and Release Android APK
+name: Build and Release Mobile
 on:
   push:
     tags: ['v*']
@@ -18,31 +18,38 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git zip unzip openjdk-17-jdk python3-pip autoconf libtool \
+            git zip unzip python3-pip autoconf libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
             libtinfo6 cmake libffi-dev libssl-dev cython3 \
-            aidl
+            openjdk-11-jdk  # Usamos Java 11 que es compatible
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          ndk-version: '25.2.9519653'
-
-      - name: Install Android tools
+      - name: Set Java 11 as default
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install \
+          sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+          echo "JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64" >> $GITHUB_ENV
+
+      - name: Setup Android SDK
+        run: |
+          # Descargar command line tools directamente
+          wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline-tools.zip
+          unzip cmdline-tools.zip -d cmdline-tools
+          mkdir -p android-sdk/cmdline-tools/latest
+          mv cmdline-tools/* android-sdk/cmdline-tools/latest/
+          rm cmdline-tools.zip
+
+          echo "ANDROID_SDK_ROOT=$GITHUB_WORKSPACE/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
+
+      - name: Accept licenses and install Android tools
+        run: |
+          yes | $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk --licenses
+          $GITHUB_WORKSPACE/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$GITHUB_WORKSPACE/android-sdk \
             "platform-tools" \
             "platforms;android-33" \
             "build-tools;33.0.0" \
-            "cmdline-tools;latest"
-          
-          echo "PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/build-tools/33.0.0" >> $GITHUB_ENV
+            "ndk;25.2.9519653"
 
-      - name: Verify Android tools
-        run: |
-          which aidl || find $ANDROID_HOME -name aidl
-          echo "AIDL_PATH=$(find $ANDROID_HOME -name aidl | head -n 1)" >> $GITHUB_ENV
-          echo "PATH=$PATH:$(dirname $(find $ANDROID_HOME -name aidl | head -n 1))" >> $GITHUB_ENV
+          echo "PATH=$PATH:$GITHUB_WORKSPACE/android-sdk/platform-tools:$GITHUB_WORKSPACE/android-sdk/build-tools/33.0.0" >> $GITHUB_ENV
 
       - name: Install Buildozer
         run: |
@@ -62,9 +69,10 @@ jobs:
           echo "version = 1.0" >> buildozer.spec
           echo "requirements = python3,kivy" >> buildozer.spec
           echo "android.permissions = INTERNET" >> buildozer.spec
-          echo "android.sdk_path = $ANDROID_HOME" >> buildozer.spec
-          echo "android.ndk_path = $ANDROID_HOME/ndk/25.2.9519653" >> buildozer.spec
+          echo "android.sdk_path = $GITHUB_WORKSPACE/android-sdk" >> buildozer.spec
+          echo "android.ndk_path = $GITHUB_WORKSPACE/android-sdk/ndk/25.2.9519653" >> buildozer.spec
           echo "android.accept_sdk_license = True" >> buildozer.spec
+          echo "android.skip_update = True" >> buildozer.spec
 
       - name: Build APK
         run: |
