@@ -2,8 +2,8 @@ name: Build Kivy APK
 
 on:
   push:
-    branches: [ Kivy ]  # Cambia esto según tu rama principal
-  workflow_dispatch:    # Permite ejecuciones manuales
+    branches: [ Kivy ]
+  workflow_dispatch:
 
 jobs:
   build-apk:
@@ -40,10 +40,20 @@ jobs:
         
         pip install --upgrade pip virtualenv
         
-    - name: Set up Buildozer
+    - name: Set up Buildozer and Android SDK
       run: |
-        pip install --user --upgrade buildozer cython aidl
+        pip install --user --upgrade buildozer cython
         export PATH=$PATH:~/.local/bin/
+        
+        # Install Android SDK components that Buildozer needs
+        mkdir -p ~/.buildozer/android/platform/android-sdk
+        wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O ~/android-sdk-tools.zip
+        unzip ~/android-sdk-tools.zip -d ~/.buildozer/android/platform/android-sdk/cmdline-tools
+        mv ~/.buildozer/android/platform/android-sdk/cmdline-tools/cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools/tools
+        rm ~/android-sdk-tools.zip
+        
+        # Accept licenses
+        yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/tools/bin/sdkmanager --licenses
 
     - name: Build APK
       run: |
