@@ -5,7 +5,7 @@ import asyncio
 from pathlib import Path
 from typing import List
 from datetime import datetime
-        
+from bs4 import BeautifulSoup,NavigableString
 class PoTranslator:
     def __init__(self, batch_size: int = 20, delay: float = 1.0 , log_funct = None):
         """
@@ -76,7 +76,7 @@ class PoTranslator:
         # Combinar con metadatos originales (los originales tienen prioridad)
         return {**new_metadata, **pot_metadata}
 
-    def _prepare_texts(self, texts: List[str]) -> tuple:
+    def _prepare_placeholders(self, texts: List[str]) -> tuple:
         """
         Prepara textos para traducción: extrae placeholders y crea versiones temporales
         
@@ -96,6 +96,40 @@ class PoTranslator:
             all_placeholders.append(placeholders)
             
         return prepared_texts, all_placeholders
+    
+    def _prepare_html(self, texts: List[str]) -> tuple:
+        prepared_texts = []
+        all_html = []
+        
+        def process_node(node,prepared_texts:list):
+            nonlocal first_node
+            nonlocal count_node
+            if isinstance(node, NavigableString):
+                if not first_node:
+                    stripped_text = node.strip()
+                    if stripped_text:
+                        prepared_texts.append(f"{stripped_text} __H__")
+                        count_node += 1
+                return
+            first_node = False
+            for child in node.children:
+                process_node(child,prepared_texts)
+                
+        for text in texts:
+            soup = BeautifulSoup(text, 'html.parser')
+            first_node = True
+            count_node = False
+            
+                
+            
+            for child in soup.contents:
+                process_node(child,prepared_texts)
+                
+            if count_node > 0:
+                all_html.append((text,count_node))
+            else:
+                prepared_texts.append(text)
+        return prepared_texts, all_html
 
     def _restore_placeholders(self, translated_texts: List[str], all_placeholders: List[List[str]]) -> List[str]:
         """
@@ -107,13 +141,50 @@ class PoTranslator:
                 text = text.replace(f'__{i}__', ph)
             restored_texts.append(text)
         return restored_texts
+    
+    def _restore_html(self, translated_texts:list, all_html:list) -> List[str]:
+        restored_texts = []
+        
+        def process_node(node,texts:list[str]):
+            nonlocal node
+            if isinstance(node, NavigableString):
+                stripped_text = node.strip()
+                if stripped_text:
+                    node = node.replace(node.text,texts.pop(0)).replace(" __h__","").replace(" __H__","")
+                return
+            for child in node.children:
+                process_node(child,texts)
+                
+                
+        translated_iter = iter(translated_texts)
+        
+        for text in translated_iter:
+            text:str
+            try:
+                if text.endswith("__H__") or text.endswith("__h__"):
+                    html , count = all_html.pop(0)
+                    
+                    soup = BeautifulSoup(html, 'html.parser')
+                    texts = [text]
+                    if count > 1:
+                        texts += [next(translated_iter,None) for _ in range(count-1)]
+                
+                    for node in soup.contents:
+                        process_node(node,texts)
+                    restored_texts.append(str(child))
+                else:
+                    restored_texts.append(text)
+            except Exception as e:
+                pass
+        return restored_texts
 
     async def _translate_batch(self, texts: List[str], dest_lang: str ,pot_file_addr:str) -> List[str]:
         """
         Traduce un lote de textos, verificando si ya existen traducciones en el archivo .po de salida.
         """
         # Preparar textos (manejo de placeholders)
-        prepared_texts, all_placeholders = self._prepare_texts(texts)
+        prepared_texts, all_placeholders = self._prepare_placeholders(texts)
+        prepared_texts, all_html = self._prepare_html(prepared_texts)
 
         # Verificar si ya existe un archivo .po para el idioma en la salida
         texts_to_translate = prepared_texts
@@ -146,7 +217,7 @@ class PoTranslator:
             except:
                 pass
         restored_texts = self._restore_placeholders(translated_texts, all_placeholders)
-
+        restored_texts = self._restore_html(translated_texts,all_html)
         return restored_texts
         
 

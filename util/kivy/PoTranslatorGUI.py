@@ -293,7 +293,7 @@ class PoTranslatorGUI(TabbedPanel):
                 print(f"\nError during translation: {str(e)}")
                 Clock.schedule_once(lambda dt: self.show_message(
                     "Error", 
-                    f"Error during translation: {str(e)}"
+                    f"Error during translation"
                 ))
             finally:
                 Clock.schedule_once(lambda dt: setattr(self, 'is_translating', False))
