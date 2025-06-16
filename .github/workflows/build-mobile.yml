@@ -2,7 +2,7 @@ name: Build Kivy APK
 
 on:
   push:
-    branches: [ Kivy ]
+    tags: ['v*']
   workflow_dispatch:
 
 jobs:
