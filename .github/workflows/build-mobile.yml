@@ -78,7 +78,7 @@ jobs:
             --permission=INTERNET \
             --dist-name=myapp \
             --arch=armeabi-v7a \
-            --android-api 30  # API más baja para evitar problemas
+            --android-api 33  # API más baja para evitar problemas
         
     - name: Upload APK artifact
       uses: actions/upload-artifact@v4
