@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List
 from datetime import datetime
 from bs4 import BeautifulSoup,NavigableString
+
 class PoTranslator:
     def __init__(self, batch_size: int = 20, delay: float = 1.0 , log_funct = None):
         """
@@ -169,11 +170,11 @@ class PoTranslator:
                     
                     for node in soup.contents:
                         process_node(node, texts)
-                    restored_texts.append(str(soup))
+                    restored_texts.append(str(soup).replace('"',"'"))
                 else:
                     restored_texts.append(text)
             except Exception as e:
-                restored_texts.append(text)  # Añadir el texto original si hay error
+                restored_texts.append(text)
                 continue
         
         return restored_texts
