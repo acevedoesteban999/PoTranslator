@@ -17,6 +17,7 @@ from kivy.graphics import Rectangle, Color
 from kivy.uix.label import Label
 from functools import partial
 
+from util.PoTranslator import PoTranslator
 from util.EditableCell import EditableCell
 
 class PoTranslatorGUI(TabbedPanel):
