@@ -45,13 +45,6 @@ jobs:
         pip install --user --upgrade buildozer cython
         export PATH=$PATH:~/.local/bin/
         
-    - name: Initialize Buildozer
-      run: |
-        buildozer init
-        # Modifica el archivo buildozer.spec según sea necesario
-        # Aquí puedes automatizar cambios al archivo buildozer.spec si lo necesitas
-        sed -i 's/#android.release_artifact = bin/.*/android.release_artifact = bin\/.*/' buildozer.spec
-        
     - name: Build APK
       run: |
         export PATH=$PATH:~/.local/bin/
