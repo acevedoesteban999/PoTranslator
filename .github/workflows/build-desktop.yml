@@ -3,7 +3,7 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
-  
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -54,8 +54,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./artifacts/PoTranslator-windows-latest/PoTranslator-${{ github.ref_name }}-Windows.exe
-            ./artifacts/PoTranslator-ubuntu-latest/PoTranslator-${{ github.ref_name }}-Linux
-            ./artifacts/PoTranslator-macos-latest/PoTranslator-${{ github.ref_name }}-Mac
+            ./artifacts/PoTranslator-windows-latest/PoTranslatorApp-${{ github.ref_name }}-Windows.exe
+            ./artifacts/PoTranslator-ubuntu-latest/PoTranslatorApp-${{ github.ref_name }}-Linux
+            ./artifacts/PoTranslator-macos-latest/PoTranslatorApp-${{ github.ref_name }}-Mac
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
