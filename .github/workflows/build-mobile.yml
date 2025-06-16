@@ -17,10 +17,18 @@ jobs:
       - name: Install Buildozer and dependencies
         run: |
           sudo apt-get update
+          
           sudo apt-get install -y \
             git zip unzip openjdk-17-jdk python3-pip autoconf libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
             libtinfo6 cmake libffi-dev libssl-dev cython3
+
+          
+          sudo apt-get install -y android-sdk android-sdk-platform-33
+
+          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> $GITHUB_ENV
+          echo "PATH=$PATH:/usr/lib/android-sdk/cmdline-tools/latest/bin" >> $GITHUB_ENV
+
           pip install buildozer
 
       - name: Generate Buildozer spec (if not exists)
