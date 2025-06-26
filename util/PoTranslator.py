@@ -5,7 +5,8 @@ import asyncio
 from pathlib import Path
 from typing import List
 from datetime import datetime
-        
+from bs4 import BeautifulSoup
+
 class PoTranslator:
     def __init__(self, batch_size: int = 20, delay: float = 1.0 , log_funct = None):
         """
@@ -24,9 +25,6 @@ class PoTranslator:
         self.translator = Translator()
         self.placeholder_regex = re.compile(
             r'({[^}]+}|%[sdf]|%\(\w+\)[sdf]|%\d+\$[sdf]|\[[^\]]+\])')
-    
-        
-        
     
     @staticmethod
     def _generate_po_metadata(lang_code: str, pot_file_addr: str) -> dict:
@@ -76,13 +74,7 @@ class PoTranslator:
         # Combinar con metadatos originales (los originales tienen prioridad)
         return {**new_metadata, **pot_metadata}
 
-    def _prepare_texts(self, texts: List[str]) -> tuple:
-        """
-        Prepara textos para traducción: extrae placeholders y crea versiones temporales
-        
-        Returns:
-            tuple: (textos_preparados, lista_de_placeholders_por_texto)
-        """
+    def _prepare_placeholders(self, texts: List[str]) -> tuple:
         prepared_texts = []
         all_placeholders = []
         
@@ -96,6 +88,50 @@ class PoTranslator:
             all_placeholders.append(placeholders)
             
         return prepared_texts, all_placeholders
+    
+    def _prepare_html(self, texts: List[str]) -> tuple:
+        def html_to_translate_format(html):
+            soup = BeautifulSoup(html, 'html.parser')
+            tag_info = {}
+            tag_id = 0
+            
+            def process_tag(tag):
+                nonlocal tag_id
+                if tag.name is None:  
+                    return str(tag)
+                
+                current_id = tag_id
+                tag_id += 1
+                
+                attrs = {}
+                if tag.attrs:
+                    for k, v in tag.attrs.items():
+                        if isinstance(v, list):
+                            attrs[k] = ' '.join(v) 
+                        else:
+                            attrs[k] = str(v)
+                
+                tag_info[current_id] = {
+                    'name': tag.name,
+                    'attrs': attrs if attrs else None
+                }
+                
+                inner_content = ''.join(process_tag(child) for child in tag.contents)
+                
+                return f" __s{current_id}__ {inner_content} __e{current_id}__ "
+            
+            processed_html = ''.join(process_tag(child) for child in soup.contents)
+            
+            processed_html = re.sub(r' +', ' ', processed_html).strip()
+            return processed_html, tag_info
+        prepared_texts = []
+        all_html = []
+        
+        for text in texts:
+            temp_text , tag_info = html_to_translate_format(text)
+            prepared_texts.append(temp_text)
+            all_html.append(tag_info)
+        return prepared_texts, all_html
 
     def _restore_placeholders(self, translated_texts: List[str], all_placeholders: List[List[str]]) -> List[str]:
         """
@@ -107,13 +143,53 @@ class PoTranslator:
                 text = text.replace(f'__{i}__', ph)
             restored_texts.append(text)
         return restored_texts
+    
+    def _restore_html(self, translated_texts: list, all_html: list) -> List[str]:
+        def transalte_format_to_html(translate_html, tag_info):
+            translate_html = re.sub(r' +', ' ', translate_html)
+            
+            def replace_start(match):
+                tag_id = int(match.group(1))
+                tag_data = tag_info[tag_id]
+                if not tag_data['attrs']:
+                    return f'<{tag_data["name"]}>'
+                
+                attrs = ' '.join(f'{k}="{v}"' for k, v in tag_data['attrs'].items())
+                return f'<{tag_data["name"]} {attrs}>'
+            
+            def replace_end(match):
+                tag_id = int(match.group(1))
+                return f'</{tag_info[tag_id]["name"]}>'
+            
+            html = re.sub(r'__s(\d+)__', replace_start, translate_html)
+            html = re.sub(r'__e(\d+)__', replace_end, html)
+            
+            html = re.sub(r'>\s+<', '><', html) 
+            html = re.sub(r'>\s+', '>', html)   
+            html = re.sub(r'\s+<', '<', html)  
+            
+            return html
+        
+        restored_texts = []
+        
+
+        for text,tag_info in zip(translated_texts,all_html):
+            if tag_info:
+                restored_texts.append(
+                    transalte_format_to_html(text,tag_info)
+                )
+            else:
+                restored_texts.append(text)
+        
+        return restored_texts
 
     async def _translate_batch(self, texts: List[str], dest_lang: str ,pot_file_addr:str) -> List[str]:
         """
         Traduce un lote de textos, verificando si ya existen traducciones en el archivo .po de salida.
         """
         # Preparar textos (manejo de placeholders)
-        prepared_texts, all_placeholders = self._prepare_texts(texts)
+        prepared_texts, all_placeholders = self._prepare_placeholders(texts)
+        prepared_texts, all_html = self._prepare_html(prepared_texts)
 
         # Verificar si ya existe un archivo .po para el idioma en la salida
         texts_to_translate = prepared_texts
@@ -146,10 +222,9 @@ class PoTranslator:
             except:
                 pass
         restored_texts = self._restore_placeholders(translated_texts, all_placeholders)
-
+        restored_texts = self._restore_html(translated_texts,all_html)
         return restored_texts
         
-
     async def translate_po_file(
         self,
         new_po_file:polib.POFile,
@@ -170,7 +245,6 @@ class PoTranslator:
             
             if i + self.batch_size < len(source_texts):
                 await asyncio.sleep(self.delay)
-        
         
         
         

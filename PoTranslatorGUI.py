@@ -337,7 +337,7 @@ class PoTranslatorGUI:
                 self.log(f"\nError during translation: {str(e)}")
                 self.root.after(0, lambda: messagebox.showerror(
                     "Error", 
-                    f"Error during translation: {str(e)}"
+                    f"Error during translation"
                 ))
             finally:
                 self.root.after(0, partial(self.toggle_ui_state, True))
