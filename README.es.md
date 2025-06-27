@@ -20,7 +20,7 @@ Potranslator GUI es una aplicación fácil de usar para traducir y administrar a
 1.  **Iniciar la aplicación**
     -   Ejecute la aplicación para abrir la ventana principal.
 
-2.  **Seleccione un archivo de olla**
+2.  **Select a POT File**
     -   Haga clic en "Explorar" para seleccionar su archivo .pot (el archivo de plantilla que contiene cadenas originales).
     -   La aplicación detectará automáticamente las traducciones disponibles en el mismo directorio.
 
@@ -55,3 +55,4 @@ Potranslator GUI es una aplicación fácil de usar para traducir y administrar a
 -   Siempre revise las traducciones automáticas antes de ahorrar.
 -   La aplicación conserva todos los metadatos existentes (comentarios, banderas) al guardar archivos .po.
 -   Use el botón "Recargar datos" si realiza cambios en los archivos fuera de la aplicación.
+-   Nuestra aplicación separa con éxito los especificadores de formato (como %S, %D, %F) y etiquetas HTML/XML durante los procesos de traducción, lo que permite el manejo de texto puro sin comprometer elementos estructurales.
