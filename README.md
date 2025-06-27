@@ -48,3 +48,4 @@ PoTranslator GUI is a user-friendly application for translating and managing .po
 - Always review automatic translations before saving.
 - The application preserves all existing metadata (comments, flags) when saving .po files.
 - Use the "Reload Data" button if you make changes to the files outside the application.
+- Our application successfully separates format specifiers (such as %s, %d, %f) and HTML/XML tags during translation processes, enabling pure text handling without compromising structural elements.
