@@ -7,7 +7,7 @@
 -   [Português](README.pt.md)
 -   [Francês](README.fr.md)
 
-### Potranslator GUI - Como usar
+### PoTranslator GUI - How to Use
 
 ## Visão geral
 
@@ -26,7 +26,7 @@ A Potranslator GUI é um aplicativo fácil de usar para traduzir e gerenciar arq
 
 ## Principais características
 
-### Gerenciamento de tradução
+### Translation Management
 
 -   **Selecione os idiomas de destino**: Verifique as caixas para os idiomas para os quais você deseja traduzir (espanhol, português, francês, italiano, alemão, inglês).
 -   **Traduzir tudo**: Clique em "Traduzir tudo" para traduzir automaticamente todos os idiomas selecionados de uma só vez.
@@ -55,4 +55,4 @@ A Potranslator GUI é um aplicativo fácil de usar para traduzir e gerenciar arq
 -   Sempre revise as traduções automáticas antes de salvar.
 -   O aplicativo preserva todos os metadados existentes (comentários, sinalizadores) ao salvar arquivos .PO.
 -   Use o botão "Reload Data" se fizer alterações nos arquivos fora do aplicativo.
--   Nosso aplicativo separa com sucesso os especificadores de formato (como %s, %d, %f) e tags html/xml durante os processos de tradução, permitindo manuseio de texto puro sem comprometer elementos estruturais.
+-   O aplicativo separa com sucesso os especificadores de formato (como %s, %d, %f) e tags html/xml durante os processos de tradução, permitindo manuseio de texto puro sem comprometer elementos estruturais.
