@@ -116,13 +116,11 @@ class PoTranslator:
                     'attrs': attrs if attrs else None
                 }
                 
-                inner_content = ''.join(process_tag(child) for child in tag.contents)
-                
-                return f" __s{current_id}__ {inner_content} __e{current_id}__ "
+                inner_content = ' '.join([process_tag(child) for child in tag.contents])
+                return f"__s{current_id}__ {inner_content} __e{current_id}__"
             
-            processed_html = ''.join(process_tag(child) for child in soup.contents)
+            processed_html = ' '.join([process_tag(child) for child in soup.contents])
             
-            processed_html = re.sub(r' +', ' ', processed_html).strip()
             return processed_html, tag_info
         prepared_texts = []
         all_html = []
@@ -146,15 +144,13 @@ class PoTranslator:
     
     def _restore_html(self, translated_texts: list, all_html: list) -> List[str]:
         def transalte_format_to_html(translate_html, tag_info):
-            translate_html = re.sub(r' +', ' ', translate_html)
-            
             def replace_start(match):
                 tag_id = int(match.group(1))
                 tag_data = tag_info[tag_id]
                 if not tag_data['attrs']:
                     return f'<{tag_data["name"]}>'
                 
-                attrs = ' '.join(f'{k}="{v}"' for k, v in tag_data['attrs'].items())
+                attrs = ' '.join(f"{k}='{v}'" for k, v in tag_data['attrs'].items())
                 return f'<{tag_data["name"]} {attrs}>'
             
             def replace_end(match):
@@ -164,9 +160,9 @@ class PoTranslator:
             html = re.sub(r'__s(\d+)__', replace_start, translate_html)
             html = re.sub(r'__e(\d+)__', replace_end, html)
             
-            html = re.sub(r'>\s+<', '><', html) 
-            html = re.sub(r'>\s+', '>', html)   
-            html = re.sub(r'\s+<', '<', html)  
+            html = re.sub(r'> <', '><', html) 
+            html = re.sub(r'> ', '>', html)   
+            html = re.sub(r' <', '<', html)  
             
             return html
         
