@@ -17,7 +17,7 @@ L'interface graphique de Potranslateur est une application conviviale pour tradu
 
 ## Commencer
 
-1.  **Lancez l'application**
+1.  **Launch the Application**
     -   Exécutez l'application pour ouvrir la fenêtre principale.
 
 2.  **Sélectionnez un fichier de pot**
