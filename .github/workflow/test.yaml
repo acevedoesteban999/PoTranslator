@@ -1,0 +1,21 @@
+name: Test
+on:
+  push:
+    branches: ['Tkinter']
+    
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      - name: Run Tests
+        run: |
+          python -m pytest tests/ --verbose
