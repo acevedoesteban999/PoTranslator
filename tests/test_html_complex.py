@@ -8,12 +8,10 @@ def test_complex_html_preparation():
     
     prepareds, tags = translator._prepare_html(html_texts)
     
-    # Verificar estructura básica
     assert "__s0__" in prepareds[0] and "__e0__" in prepareds[0]
     assert "__s1__" in prepareds[0] and "__e1__" in prepareds[0]
     assert "__s2__" in prepareds[0] and "__e2__" in prepareds[0]
     
-    # Verificar atributos
     assert tags[0][0]['name'] == 'div'
     assert tags[0][0]['attrs']['class'] == 'container'
     assert tags[0][1]['name'] == 'p'
@@ -22,7 +20,6 @@ def test_complex_html_preparation():
     assert tags[0][3]['attrs']['href'] == 'test.com'
     assert tags[0][3]['attrs']['data-id'] == '123'
     
-    # Verificar lista
     assert tags[1][0]['name'] == 'ul'
     assert tags[1][1]['name'] == 'li'
     assert tags[1][2]['name'] == 'li'
@@ -30,8 +27,8 @@ def test_complex_html_preparation():
 def test_complex_html_restoration():
     translator = PoTranslator()
     translated_texts = [
-        "__s0__ __s1__ Hola __s2__ mundo __e2__! __e1__ __s3__ haga clic __e3__ __e0__",
-        "__s0__ __s1__ Elemento 1 __e1__ __s2__ Elemento 2 __e2__ __e0__"
+        "__s0__ __s1__ Hello  __s2__ word __e2__ !  __s3__ haga clic __e3__ __e1__ __e0__",
+        "__s0__ __s1__ Element 1 __e1__ __s2__ Element 2 __e2__ __e0__"
     ]
     tags = [
         {
@@ -50,16 +47,8 @@ def test_complex_html_restoration():
     restored = translator._restore_html(translated_texts, tags)
     
     expected = [
-        '<div class="container"><p>Hola <strong>mundo</strong>! <a href="test.com" data-id="123">haga clic</a></p></div>',
-        '<ul><li>Elemento 1</li><li>Elemento 2</li></ul>'
+        "<div class='container'><p>Hello <strong>word</strong>! <a href='test.com' data-id='123'>haga clic</a></p></div>",
+        "<ul><li>Element 1</li><li>Element 2</li></ul>"
     ]
     
-    from bs4 import BeautifulSoup
-    restored_normalized = [
-        str(BeautifulSoup(html, 'html.parser')) for html in restored
-    ]
-    expected_normalized = [
-        str(BeautifulSoup(html, 'html.parser')) for html in expected
-    ]
-    
-    assert restored_normalized == expected_normalized
+    assert restored == expected

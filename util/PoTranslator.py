@@ -80,7 +80,10 @@ class PoTranslator:
         
         for text in texts:
             placeholders_list = self.placeholder_regex.findall(text)
-            placeholders = set(placeholders_list)
+            placeholders = []
+            for placeholder in placeholders_list:
+                if placeholder not in placeholders:
+                    placeholders.append(placeholder)
             temp_text = text
             for i, ph in enumerate(placeholders):
                 temp_text = temp_text.replace(ph, f'__{i}__')
