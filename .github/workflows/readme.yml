@@ -4,52 +4,29 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'README.md'
-
 jobs:
-  check-changes:
-    runs-on: ubuntu-latest
-    outputs:
-      readme_changed: ${{ steps.check_files.outputs.readme_changed }}
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-      
-      - name: Check for README changes
-        id: check_files
-        run: |
-          git diff --quiet HEAD^ HEAD -- README.md || echo "::set-output name=readme_changed::true"
-
   build:
-    needs: check-changes
-    if: needs.check-changes.outputs.readme_changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
-      
+          token: ${{ secrets.GITHUB_TOKEN }} 
+          persist-credentials: true 
       - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
-      
-      # ISO Language Codes: https://cloud.google.com/translate/docs/languages
+      # ISO Langusge Codes: https://cloud.google.com/translate/docs/languages  
       - name: Adding README - Spanish
         uses: dephraiim/translate-readme@main
         with:
           LANG: es
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
       - name: Adding README - Portuguese
         uses: dephraiim/translate-readme@main
         with:
           LANG: pt
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
       - name: Adding README - French
         uses: dephraiim/translate-readme@main
         with:
