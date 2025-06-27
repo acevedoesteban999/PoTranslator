@@ -34,7 +34,7 @@ A Potranslator GUI é um aplicativo fácil de usar para traduzir e gerenciar arq
 
 ### Revisão e edição
 
--   View all original strings and their translations side by side.
+-   Veja todas as cordas originais e suas traduções lado a lado.
 -   A tabela mostra:
     -   Texto original (do arquivo .pot)
     -   Texto traduzido para cada idioma selecionado
@@ -50,7 +50,7 @@ A Potranslator GUI é um aplicativo fácil de usar para traduzir e gerenciar arq
 -   Ajuste o tamanho do lote para operações de tradução (quantas strings são processadas de uma só vez).
 -   Escolha se deve salvar arquivos no diretório do arquivo de maconha ou em uma pasta de traduções separada.
 
-## Pontas
+### Pontas
 
 -   Sempre revise as traduções automáticas antes de salvar.
 -   O aplicativo preserva todos os metadados existentes (comentários, sinalizadores) ao salvar arquivos .PO.

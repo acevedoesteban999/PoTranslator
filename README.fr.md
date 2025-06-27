@@ -50,7 +50,7 @@ L'interface graphique de Potranslateur est une application conviviale pour tradu
 -   Ajustez la taille du lot pour les opérations de traduction (combien de chaînes sont traitées en même temps).
 -   Choisissez s'il faut enregistrer des fichiers dans le répertoire de fichiers POT ou un dossier de traduction distinct.
 
-## Conseils
+### Conseils
 
 -   Passez en revue toujours les traductions automatiques avant d'économiser.
 -   L'application préserve toutes les métadonnées existantes (commentaires, drapeaux) lors de l'enregistrement des fichiers .po.
