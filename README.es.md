@@ -55,4 +55,4 @@ Potranslator GUI es una aplicación fácil de usar para traducir y administrar a
 -   Siempre revise las traducciones automáticas antes de ahorrar.
 -   La aplicación conserva todos los metadatos existentes (comentarios, banderas) al guardar archivos .po.
 -   Use el botón "Recargar datos" si realiza cambios en los archivos fuera de la aplicación.
--   Nuestra aplicación separa con éxito los especificadores de formato (como %S, %D, %F) y etiquetas HTML/XML durante los procesos de traducción, lo que permite el manejo de texto puro sin comprometer elementos estructurales.
+-   La aplicación separa con éxito los especificadores de formato (como %S, %D, %F) y etiquetas HTML/XML durante los procesos de traducción, lo que permite el manejo de texto puro sin comprometer elementos estructurales.

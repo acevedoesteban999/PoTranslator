@@ -55,4 +55,4 @@ L'interface graphique de Potranslateur est une application conviviale pour tradu
 -   Passez en revue toujours les traductions automatiques avant d'économiser.
 -   L'application préserve toutes les métadonnées existantes (commentaires, drapeaux) lors de l'enregistrement des fichiers .po.
 -   Utilisez le bouton "Recharger les données" si vous apportez des modifications aux fichiers à l'extérieur de l'application.
--   Notre application sépare avec succès les spécificateurs de format (tels que% s,% d,% f) et les balises HTML / XML pendant les processus de traduction, permettant une manipulation de texte pure sans compromettre les éléments structurels.
+-   L'application sépare avec succès les spécificateurs de format (tels que% s,% d,% f) et les balises HTML / XML pendant les processus de traduction, permettant une manipulation de texte pure sans compromettre les éléments structurels.
