@@ -1,5 +1,5 @@
 from ..util.PoTranslator import PoTranslator
-import json
+
 HTML_TEXTS = [
     "<div>Click <a href='example.com'>here</a></div>",
 ]
