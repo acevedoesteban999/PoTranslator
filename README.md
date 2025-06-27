@@ -44,7 +44,7 @@ PoTranslator GUI is a user-friendly application for translating and managing .po
 - Adjust batch size for translation operations (how many strings are processed at once).
 - Choose whether to save files in the POT file directory or a separate translations folder.
 
-## Tips
+### Tips
 - Always review automatic translations before saving.
 - The application preserves all existing metadata (comments, flags) when saving .po files.
 - Use the "Reload Data" button if you make changes to the files outside the application.
